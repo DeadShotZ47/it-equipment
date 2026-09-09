@@ -13,8 +13,9 @@ import {
   ApexNonAxisChartSeries,
   ApexResponsive
 } from 'ng-apexcharts';
-import { DashboardService } from '../../core/services/dashboard.service';
-import { DashboardStats, MonthlyTrend, CategoryStat } from '../../core/models/types';
+import { DashboardService } from '../services/dashboard.service';
+import { DashboardStats, MonthlyTrend, CategoryStat } from '../models/dashboard.model';
+import { StatCardComponent } from '../components/stat-card.component';
 
 export interface BarChartOptions {
   series: ApexAxisChartSeries;
@@ -38,9 +39,9 @@ export interface DonutChartOptions {
 }
 
 @Component({
-  selector: 'app-dashboard',
+  selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule],
+  imports: [CommonModule, NgApexchartsModule, StatCardComponent],
   template: `
     <div class="space-y-6">
       <!-- Page Header -->
@@ -62,76 +63,50 @@ export interface DonutChartOptions {
 
       <!-- 4 Core Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Card 1: Total Equipment -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-slate-500">อุปกรณ์ทั้งหมดในระบบ</p>
-              <h3 class="text-2xl font-bold text-slate-900 mt-1">{{ stats()?.totalEquipment ?? 0 }}</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">
-                {{ stats()?.totalFixedAssets ?? 0 }} สินทรัพย์ถาวร · {{ stats()?.totalConsumables ?? 0 }} ของสิ้นเปลือง
-              </p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <app-stat-card
+          title="อุปกรณ์ทั้งหมดในระบบ"
+          [value]="stats()?.totalEquipment ?? 0"
+          [subtitle]="(stats()?.totalFixedAssets ?? 0) + ' สินทรัพย์ถาวร · ' + (stats()?.totalConsumables ?? 0) + ' ของสิ้นเปลือง'"
+          type="default">
+          <svg card-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </app-stat-card>
 
-        <!-- Card 2: Checked Out -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-slate-500">กำลังถูกยืมใช้งาน</p>
-              <h3 class="text-2xl font-bold text-blue-600 mt-1">{{ stats()?.checkedOut ?? 0 }}</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">พนักงานกำลังถือครองใช้งาน</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <app-stat-card
+          title="กำลังถูกยืมใช้งาน"
+          [value]="stats()?.checkedOut ?? 0"
+          subtitle="พนักงานกำลังถือครองใช้งาน"
+          type="blue">
+          <svg card-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </app-stat-card>
 
-        <!-- Card 3: Pending Requests -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-slate-500">คำขอที่รอการอนุมัติ</p>
-              <h3 class="text-2xl font-bold text-amber-600 mt-1">{{ stats()?.pendingRequests ?? 0 }}</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">รอเจ้าหน้าที่ IT ตรวจสอบ 1 ขั้นตอน</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <app-stat-card
+          title="คำขอที่รอการอนุมัติ"
+          [value]="stats()?.pendingRequests ?? 0"
+          subtitle="รอเจ้าหน้าที่ IT ตรวจสอบ 1 ขั้นตอน"
+          type="amber">
+          <svg card-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        </app-stat-card>
 
-        <!-- Card 4: Low Stock Items -->
-        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs font-medium text-slate-500">ของสิ้นเปลืองใกล้หมด</p>
-              <h3 class="text-2xl font-bold text-rose-600 mt-1">{{ stats()?.lowStock ?? 0 }}</h3>
-              <p class="text-[11px] text-slate-400 mt-0.5">สินค้าคงเหลือ &le; 5 ชิ้น</p>
-            </div>
-            <div class="w-11 h-11 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <app-stat-card
+          title="ของสิ้นเปลืองใกล้หมด"
+          [value]="stats()?.lowStock ?? 0"
+          subtitle="สินค้าคงเหลือ &le; 5 ชิ้น"
+          type="rose">
+          <svg card-icon class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </app-stat-card>
       </div>
 
       <!-- Charts Section (ApexCharts) -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Monthly Checkout Trends (2 cols) -->
+        <!-- Monthly Checkout Trends -->
         <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
           <div class="flex items-center justify-between mb-4">
             <div>
@@ -156,7 +131,7 @@ export interface DonutChartOptions {
           </div>
         </div>
 
-        <!-- Equipment by Category Donut Chart (1 col) -->
+        <!-- Equipment by Category Donut Chart -->
         <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-xs flex flex-col">
           <div class="mb-4">
             <h2 class="text-base font-semibold text-slate-900">สัดส่วนอุปกรณ์ตามหมวดหมู่</h2>
@@ -178,7 +153,7 @@ export interface DonutChartOptions {
     </div>
   `
 })
-export class DashboardComponent implements OnInit {
+export class DashboardPageComponent implements OnInit {
   private dashboardService = inject(DashboardService);
 
   stats = signal<DashboardStats | null>(null);

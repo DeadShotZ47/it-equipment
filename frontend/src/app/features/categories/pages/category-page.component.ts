@@ -1,13 +1,14 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { CategoryService } from '../../core/services/category.service';
-import { Category } from '../../core/models/types';
+import { CategoryService } from '../services/category.service';
+import { Category } from '../models/category.model';
+import { CategoryFormModalComponent } from '../components/category-form-modal.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
-  selector: 'app-category-list',
+  selector: 'app-category-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, CategoryFormModalComponent, EmptyStateComponent],
   template: `
     <div class="space-y-5">
       <!-- Title Bar -->
@@ -53,64 +54,39 @@ import { Category } from '../../core/models/types';
                 </span>
               </td>
               <td class="px-6 py-4 text-right space-x-3">
-                <button (click)="openEditModal(cat)" class="text-blue-600 hover:text-blue-800 font-medium">แก้ไข</button>
-                <button (click)="deleteCategory(cat)" class="text-rose-600 hover:text-rose-800 font-medium">ลบ</button>
+                <button (click)="openEditModal(cat)" class="text-blue-600 hover:text-blue-800 font-medium transition">แก้ไข</button>
+                <button (click)="deleteCategory(cat)" class="text-rose-600 hover:text-rose-800 font-medium transition">ลบ</button>
               </td>
             </tr>
             <tr *ngIf="categories().length === 0">
-              <td colspan="4" class="px-6 py-8 text-center text-slate-400">ไม่พบหมวดหมู่ คลิกปุ่มเพิ่มหมวดหมู่เพื่อสร้างรายการแรก</td>
+              <td colspan="4" class="px-6 py-8 text-center text-slate-400">
+                <app-empty-state icon="🏷️" title="ยังไม่มีหมวดหมู่" description="คลิกปุ่มเพิ่มหมวดหมู่เพื่อสร้างรายการแรก" actionText="+ เพิ่มหมวดหมู่" (action)="openAddModal()"></app-empty-state>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
 
-    <!-- Modal Form -->
-    <div *ngIf="showModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-      <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
-        <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
-          <h3 class="text-sm font-bold">{{ isEditing() ? 'แก้ไขหมวดหมู่' : 'สร้างหมวดหมู่ใหม่' }}</h3>
-          <button (click)="closeModal()" class="text-slate-400 hover:text-white transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-          </button>
-        </div>
-
-        <form (ngSubmit)="saveCategory()" class="p-6 space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">ชื่อหมวดหมู่ *</label>
-            <input type="text" [(ngModel)]="formName" name="name" required placeholder="เช่น โน้ตบุ๊ก, จอภาพ, อุปกรณ์ต่อพ่วง"
-                   class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">คำอธิบาย</label>
-            <textarea [(ngModel)]="formDescription" name="description" rows="2" placeholder="ระบุประเภทอุปกรณ์ภายใต้หมวดหมู่นี้..."
-                      class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
-          </div>
-
-          <div class="pt-3 border-t border-slate-200 flex justify-end gap-2">
-            <button type="button" (click)="closeModal()" class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">ยกเลิก</button>
-            <button type="submit" [disabled]="saving()"
-                    class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm transition disabled:opacity-50">
-              {{ saving() ? 'กำลังบันทึก...' : 'บันทึกหมวดหมู่' }}
-            </button>
-          </div>
-        </form>
-      </div>
+      <!-- Add/Edit Form Modal -->
+      <app-category-form-modal
+        [isOpen]="showModal()"
+        [isEditing]="isEditing()"
+        [category]="selectedCategory"
+        [isSaving]="saving()"
+        (save)="saveCategory($event)"
+        (close)="showModal.set(false)">
+      </app-category-form-modal>
     </div>
   `
 })
-export class CategoryListComponent implements OnInit {
+export class CategoryPageComponent implements OnInit {
   categoryService = inject(CategoryService);
   categories = signal<Category[]>([]);
 
   showModal = signal(false);
   isEditing = signal(false);
-  editingId: string | null = null;
+  selectedCategory: Category | null = null;
   saving = signal(false);
-
-  formName = '';
-  formDescription = '';
 
   ngOnInit(): void {
     this.loadCategories();
@@ -124,35 +100,24 @@ export class CategoryListComponent implements OnInit {
 
   openAddModal(): void {
     this.isEditing.set(false);
-    this.editingId = null;
-    this.formName = '';
-    this.formDescription = '';
+    this.selectedCategory = null;
     this.showModal.set(true);
   }
 
   openEditModal(cat: Category): void {
     this.isEditing.set(true);
-    this.editingId = cat.id;
-    this.formName = cat.name;
-    this.formDescription = cat.description || '';
+    this.selectedCategory = cat;
     this.showModal.set(true);
   }
 
-  closeModal(): void {
-    this.showModal.set(false);
-  }
-
-  saveCategory(): void {
-    if (!this.formName) return;
+  saveCategory(payload: { name: string; description?: string }): void {
     this.saving.set(true);
 
-    const payload = { name: this.formName, description: this.formDescription };
-
-    if (this.isEditing() && this.editingId) {
-      this.categoryService.updateCategory(this.editingId, payload).subscribe({
+    if (this.isEditing() && this.selectedCategory) {
+      this.categoryService.updateCategory(this.selectedCategory.id, payload).subscribe({
         next: () => {
           this.saving.set(false);
-          this.closeModal();
+          this.showModal.set(false);
           this.loadCategories();
         },
         error: (err) => {
@@ -164,7 +129,7 @@ export class CategoryListComponent implements OnInit {
       this.categoryService.createCategory(payload).subscribe({
         next: () => {
           this.saving.set(false);
-          this.closeModal();
+          this.showModal.set(false);
           this.loadCategories();
         },
         error: (err) => {

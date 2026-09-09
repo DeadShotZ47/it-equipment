@@ -3,12 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
-import { HistoryService } from '../../core/services/history.service';
-import { AuthService } from '../../core/services/auth.service';
-import { HistoryRow } from '../../core/models/types';
+import { HistoryService } from '../services/history.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { HistoryRow } from '../models/history.model';
 
 @Component({
-  selector: 'app-history-list',
+  selector: 'app-history-page',
   standalone: true,
   imports: [CommonModule, FormsModule, AgGridAngular],
   template: `
@@ -75,7 +75,7 @@ import { HistoryRow } from '../../core/models/types';
     </div>
   `
 })
-export class HistoryListComponent implements OnInit {
+export class HistoryPageComponent implements OnInit {
   historyService = inject(HistoryService);
   auth = inject(AuthService);
 
@@ -104,7 +104,7 @@ export class HistoryListComponent implements OnInit {
         return `
           <div class="h-full py-1 leading-normal">
             <span class="font-semibold text-slate-900 block truncate text-xs" title="${row.equipmentName}">${row.equipmentName}</span>
-            <span class="text-[11px] text-slate-400 font-mono block truncate">ซีเรียล: ${row.serialNumber}</span>
+            <span class="text-[11px] text-slate-400 font-mono block truncate">ซีเรียล: ${row.serialNumber || '-'}</span>
           </div>
         `;
       }

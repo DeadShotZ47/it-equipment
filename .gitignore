@@ -42,3 +42,9 @@ yarn-error.log*
 # OS files
 .DS_Store
 Thumbs.db
+
+# Environment files (Frontend)
+frontend/src/environments/environment.ts
+frontend/src/environments/environment.development.ts
+frontend/src/environments/*.ts
+!frontend/src/environments/environment.example.ts

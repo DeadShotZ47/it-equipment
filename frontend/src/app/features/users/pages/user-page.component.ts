@@ -1,14 +1,17 @@
-﻿import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { UserService, CreateUserDto, UpdateUserDto } from '../../core/services/user.service';
-import { AuthService } from '../../core/services/auth.service';
-import { User, Role } from '../../core/models/types';
+import { UserService, CreateUserDto, UpdateUserDto } from '../services/user.service';
+import { AuthService } from '../../../core/services/auth.service';
+import { User } from '../models/user.model';
+import { UserFormModalComponent } from '../components/user-form-modal.component';
+import { ConfirmDialogComponent } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
 
 @Component({
-  selector: 'app-user-list',
+  selector: 'app-user-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, UserFormModalComponent, ConfirmDialogComponent, EmptyStateComponent],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -105,7 +108,9 @@ import { User, Role } from '../../core/models/types';
               </tr>
 
               <tr *ngIf="!loading() && users().length === 0" class="text-center py-8">
-                <td colspan="7" class="py-8 text-slate-400">ไม่พบข้อมูลผู้ใช้งานที่ตรงตามเงื่อนไข</td>
+                <td colspan="7" class="py-8 text-slate-400">
+                  <app-empty-state icon="👥" title="ไม่พบข้อมูลผู้ใช้งาน" description="ไม่มีข้อมูลผู้ใช้งานที่ตรงตามเงื่อนไขการค้นหา"></app-empty-state>
+                </td>
               </tr>
 
               <tr *ngFor="let u of users()" class="hover:bg-slate-50/80 transition">
@@ -188,131 +193,32 @@ import { User, Role } from '../../core/models/types';
         </div>
       </div>
 
-      <!-- ================= CREATE / EDIT USER MODAL ================= -->
-      <div *ngIf="showModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-lg overflow-hidden my-8">
-          <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
-            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <span>{{ isEditing() ? '✏️ แก้ไขข้อมูลผู้ใช้งาน' : '➕ เพิ่มผู้ใช้งานใหม่' }}</span>
-            </h3>
-            <button (click)="closeModal()" class="text-slate-400 hover:text-slate-600 text-lg">✕</button>
-          </div>
+      <!-- Add / Edit Modal -->
+      <app-user-form-modal
+        [isOpen]="showModal()"
+        [isEditing]="isEditing()"
+        [user]="selectedUser"
+        [isSaving]="modalLoading()"
+        [errorMessage]="modalError()"
+        (save)="handleSaveUser($event)"
+        (close)="showModal.set(false)">
+      </app-user-form-modal>
 
-          <form (ngSubmit)="saveUser()" class="p-6 space-y-4">
-            <div *ngIf="modalError()" class="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs">
-              {{ modalError() }}
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                ชื่อ-นามสกุล <span class="text-red-500">*</span>
-              </label>
-              <input type="text" [(ngModel)]="formFullName" name="formFullName" required
-                     placeholder="เช่น สมศักดิ์ สุขสันต์"
-                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">
-                  รหัสพนักงาน <span class="text-red-500">*</span>
-                </label>
-                <input type="text" [(ngModel)]="formEmployeeId" name="formEmployeeId" required
-                       placeholder="เช่น EMP-001"
-                       class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">แผนก / ฝ่าย</label>
-                <input type="text" [(ngModel)]="formDepartment" name="formDepartment"
-                       placeholder="เช่น IT, HR, การเงิน"
-                       class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                อีเมล (Email) <span class="text-red-500">*</span>
-              </label>
-              <input type="email" [(ngModel)]="formEmail" name="formEmail" required
-                     placeholder="user@company.com"
-                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">สิทธิ์การใช้งาน (Role)</label>
-                <select [(ngModel)]="formRole" name="formRole"
-                        class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option value="USER">👤 พนักงาน (USER)</option>
-                  <option value="ADMIN">🛡️ ผู้ดูแลระบบ (ADMIN)</option>
-                </select>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-slate-700 mb-1">สถานะการใช้งาน</label>
-                <select [(ngModel)]="formIsActive" name="formIsActive"
-                        class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                  <option [ngValue]="true">✅ เปิดใช้งาน (Active)</option>
-                  <option [ngValue]="false">⛔ ระงับการใช้งาน (Inactive)</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">
-                {{ isEditing() ? 'รหัสผ่านใหม่ (เว้นว่างไว้ถ้าไม่ต้องการเปลี่ยน)' : 'รหัสผ่าน (Password) *' }}
-              </label>
-              <input type="password" [(ngModel)]="formPassword" name="formPassword"
-                     [required]="!isEditing()"
-                     placeholder="อย่างน้อย 6 ตัวอักษร"
-                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-
-            <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
-              <button (click)="closeModal()" type="button"
-                      class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
-                ยกเลิก
-              </button>
-              <button type="submit" [disabled]="modalLoading()"
-                      class="px-5 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-sm disabled:opacity-50 flex items-center gap-1.5">
-                <span *ngIf="modalLoading()" class="animate-spin rounded-full h-3.5 w-3.5 border-2 border-white border-t-transparent"></span>
-                <span>{{ isEditing() ? 'บันทึกการแก้ไข' : 'สร้างผู้ใช้' }}</span>
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- ================= DELETE / DEACTIVATE CONFIRM MODAL ================= -->
-      <div *ngIf="showDeleteModal()" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-100 w-full max-w-sm p-6 text-center">
-          <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-3 text-xl">
-            ⚠️
-          </div>
-          <h3 class="text-sm font-bold text-slate-900">ยืนยันการลบหรือระงับผู้ใช้งาน</h3>
-          <p class="text-xs text-slate-500 mt-2">
-            คุณต้องการจัดการบัญชีของ <span class="font-semibold text-slate-800">"{{ selectedUser?.fullName }}"</span> ใช่หรือไม่?
-          </p>
-          <p class="text-[11px] text-amber-600 bg-amber-50 p-2 rounded-lg mt-3">
-            * หากผู้ใช้นี้เคยมีประวัติการเบิกอุปกรณ์ ระบบจะทำการ "ระงับการใช้งาน" แทนการลบถาวร เพื่อรักษาความสมบูรณ์ของประวัติ
-          </p>
-
-          <div class="flex justify-center gap-2 mt-6">
-            <button (click)="showDeleteModal.set(false)" type="button"
-                    class="px-4 py-2 text-xs font-medium text-slate-600 hover:bg-slate-100 rounded-lg">
-              ยกเลิก
-            </button>
-            <button (click)="confirmDelete()" [disabled]="modalLoading()" type="button"
-                    class="px-4 py-2 text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white rounded-lg shadow-sm disabled:opacity-50">
-              {{ modalLoading() ? 'กำลังดำเนินการ...' : 'ยืนยันดำเนินการ' }}
-            </button>
-          </div>
-        </div>
-      </div>
+      <!-- Delete / Deactivate Confirm Dialog -->
+      <app-confirm-dialog
+        [isOpen]="showDeleteModal()"
+        title="ยืนยันการลบหรือระงับผู้ใช้งาน"
+        [message]="'คุณต้องการจัดการบัญชีของ ' + selectedUser?.fullName + ' ใช่หรือไม่? (* หากมีประวัติการเบิก ระบบจะระงับแทนการลบถาวร)'"
+        confirmText="ยืนยันดำเนินการ"
+        type="danger"
+        [isLoading]="modalLoading()"
+        (confirm)="confirmDelete()"
+        (cancel)="showDeleteModal.set(false)">
+      </app-confirm-dialog>
     </div>
   `
 })
-export class UserListComponent implements OnInit {
+export class UserPageComponent implements OnInit {
   userService = inject(UserService);
   authService = inject(AuthService);
 
@@ -334,21 +240,11 @@ export class UserListComponent implements OnInit {
   // Modal states
   showModal = signal(false);
   isEditing = signal(false);
+  selectedUser: User | null = null;
   modalLoading = signal(false);
   modalError = signal<string | null>(null);
 
   showDeleteModal = signal(false);
-  selectedUser: User | null = null;
-
-  // Form inputs
-  editUserId = '';
-  formFullName = '';
-  formEmployeeId = '';
-  formDepartment = '';
-  formEmail = '';
-  formRole: Role = 'USER';
-  formIsActive = true;
-  formPassword = '';
 
   private searchTimeout: any;
 
@@ -398,67 +294,27 @@ export class UserListComponent implements OnInit {
 
   openCreateModal(): void {
     this.isEditing.set(false);
+    this.selectedUser = null;
     this.modalError.set(null);
-    this.editUserId = '';
-    this.formFullName = '';
-    this.formEmployeeId = `EMP-${Date.now().toString().slice(-4)}`;
-    this.formDepartment = '';
-    this.formEmail = '';
-    this.formRole = 'USER';
-    this.formIsActive = true;
-    this.formPassword = '';
     this.showModal.set(true);
   }
 
   openEditModal(u: User): void {
     this.isEditing.set(true);
+    this.selectedUser = u;
     this.modalError.set(null);
-    this.editUserId = u.id;
-    this.formFullName = u.fullName;
-    this.formEmployeeId = u.employeeId;
-    this.formDepartment = u.department || '';
-    this.formEmail = u.email;
-    this.formRole = u.role;
-    this.formIsActive = u.isActive !== false;
-    this.formPassword = '';
     this.showModal.set(true);
   }
 
-  closeModal(): void {
-    this.showModal.set(false);
-  }
-
-  saveUser(): void {
-    if (!this.formFullName.trim() || !this.formEmail.trim() || !this.formEmployeeId.trim()) {
-      this.modalError.set('กรุณากรอกชื่อ-นามสกุล, รหัสพนักงาน และอีเมล');
-      return;
-    }
-
-    if (!this.isEditing() && (!this.formPassword || this.formPassword.length < 6)) {
-      this.modalError.set('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
-      return;
-    }
-
+  handleSaveUser(event: { isEditing: boolean; id?: string; payload: CreateUserDto | UpdateUserDto }): void {
     this.modalLoading.set(true);
     this.modalError.set(null);
 
-    if (this.isEditing()) {
-      const updatePayload: UpdateUserDto = {
-        fullName: this.formFullName.trim(),
-        employeeId: this.formEmployeeId.trim(),
-        department: this.formDepartment.trim() || undefined,
-        email: this.formEmail.trim().toLowerCase(),
-        role: this.formRole,
-        isActive: this.formIsActive
-      };
-      if (this.formPassword && this.formPassword.trim()) {
-        updatePayload.password = this.formPassword.trim();
-      }
-
-      this.userService.updateUser(this.editUserId, updatePayload).subscribe({
+    if (event.isEditing && event.id) {
+      this.userService.updateUser(event.id, event.payload as UpdateUserDto).subscribe({
         next: () => {
           this.modalLoading.set(false);
-          this.closeModal();
+          this.showModal.set(false);
           this.loadUsers();
         },
         error: (err) => {
@@ -467,20 +323,10 @@ export class UserListComponent implements OnInit {
         }
       });
     } else {
-      const createPayload: CreateUserDto = {
-        fullName: this.formFullName.trim(),
-        employeeId: this.formEmployeeId.trim(),
-        department: this.formDepartment.trim() || undefined,
-        email: this.formEmail.trim().toLowerCase(),
-        password: this.formPassword,
-        role: this.formRole,
-        isActive: this.formIsActive
-      };
-
-      this.userService.createUser(createPayload).subscribe({
+      this.userService.createUser(event.payload as CreateUserDto).subscribe({
         next: () => {
           this.modalLoading.set(false);
-          this.closeModal();
+          this.showModal.set(false);
           this.loadUsers();
         },
         error: (err) => {
