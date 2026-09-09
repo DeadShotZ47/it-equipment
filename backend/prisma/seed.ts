@@ -83,6 +83,7 @@ async function main() {
       quantity: 1,
       status: 'AVAILABLE',
       location: 'IT Storage Cabinet A',
+      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-MBP16-001'
     }
   });
@@ -97,6 +98,7 @@ async function main() {
       quantity: 1,
       status: 'CHECKED_OUT',
       location: 'Building 2, 4th Floor',
+      imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-TPX1-002'
     }
   });
@@ -111,6 +113,7 @@ async function main() {
       quantity: 1,
       status: 'AVAILABLE',
       location: 'IT Storage Shelf B',
+      imageUrl: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-DEL27-003'
     }
   });
@@ -125,6 +128,7 @@ async function main() {
       quantity: 1,
       status: 'MAINTENANCE',
       location: 'IT Repair Center',
+      imageUrl: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-LG34-004'
     }
   });
@@ -139,6 +143,7 @@ async function main() {
       quantity: 1,
       status: 'AVAILABLE',
       location: 'IT Supply Drawer 1',
+      imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-MXM3-005'
     }
   });
@@ -153,6 +158,7 @@ async function main() {
       quantity: 1,
       status: 'AVAILABLE',
       location: 'Server Room Rack 2',
+      imageUrl: 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-CSCO-006'
     }
   });
@@ -168,6 +174,7 @@ async function main() {
       quantity: 35,
       status: 'AVAILABLE',
       location: 'IT Supply Drawer 2',
+      imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-HDMI-2M'
     }
   });
@@ -182,6 +189,7 @@ async function main() {
       quantity: 18,
       status: 'AVAILABLE',
       location: 'IT Supply Drawer 2',
+      imageUrl: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-USBC-HUB'
     }
   });
@@ -196,6 +204,7 @@ async function main() {
       quantity: 4, // Low stock! (<= 5)
       status: 'AVAILABLE',
       location: 'IT Supply Drawer 3',
+      imageUrl: 'https://images.unsplash.com/photo-1619725002198-6a689b72f41d?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-BATT-AA'
     }
   });
@@ -207,9 +216,10 @@ async function main() {
       categoryId: catConsumables.id,
       serialNumber: null,
       isConsumable: true,
-      quantity: 3, // Low stock! (<= 5)
+      quantity: 12,
       status: 'AVAILABLE',
-      location: 'IT Supply Shelf C',
+      location: 'IT Supply Drawer 2',
+      imageUrl: 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=600&q=80',
       qrCode: 'EQ-CAT6-3M'
     }
   });

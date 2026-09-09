@@ -10,6 +10,8 @@ out-tsc/
 bazel-out/
 .angular/
 */.angular/
+uploads/
+*/uploads/
 
 # Environment variables
 .env

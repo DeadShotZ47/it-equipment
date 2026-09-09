@@ -38,10 +38,12 @@ import { Category } from '../../core/models/types';
           </thead>
           <tbody class="divide-y divide-slate-100 text-slate-700">
             <tr *ngFor="let cat of categories()" class="hover:bg-slate-50/80 transition">
-              <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-2">
-                <span class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                  🏷️
-                </span>
+              <td class="px-6 py-4 font-semibold text-slate-900 flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                  </svg>
+                </div>
                 {{ cat.name }}
               </td>
               <td class="px-6 py-4 text-slate-500">{{ cat.description || '-' }}</td>

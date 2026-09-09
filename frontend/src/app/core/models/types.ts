@@ -37,15 +37,15 @@ export type EquipmentStatus = 'AVAILABLE' | 'CHECKED_OUT' | 'MAINTENANCE' | 'RET
 export interface Equipment {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   categoryId: string;
   category?: Category;
   serialNumber?: string | null;
   isConsumable: boolean;
   quantity: number;
   status: EquipmentStatus;
-  location?: string;
-  imageUrl?: string;
+  location?: string | null;
+  imageUrl?: string | null;
   qrCode?: string;
   createdAt?: string;
   updatedAt?: string;

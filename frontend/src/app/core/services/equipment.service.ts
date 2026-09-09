@@ -59,4 +59,20 @@ export class EquipmentService {
   deleteEquipment(id: string): Observable<{ message: string }> {
     return this.http.delete<{ message: string }>(`${this.apiUrl}/${id}`);
   }
+
+  uploadImage(file: File): Observable<{ url: string; filename: string; size: number }> {
+    const formData = new FormData();
+    formData.append('image', file);
+    const uploadApi = `${environment.apiUrl}/upload`;
+    return this.http.post<{ url: string; filename: string; size: number }>(uploadApi, formData);
+  }
+
+  resolveImageUrl(url?: string | null): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+      return url;
+    }
+    const base = environment.apiUrl.replace(/\/api\/?$/, '');
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
 }

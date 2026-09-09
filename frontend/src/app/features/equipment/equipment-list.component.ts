@@ -185,6 +185,47 @@ import { Equipment, Category } from '../../core/models/types';
                    class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
           </div>
 
+          <!-- Image Upload / Preview -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="block text-xs font-semibold text-slate-700 uppercase">รูปภาพอุปกรณ์ (Equipment Image)</label>
+              <button type="button" (click)="useCustomUrl = !useCustomUrl" class="text-[11px] text-blue-600 hover:underline">
+                {{ useCustomUrl ? '📁 สลับไปอัปโหลดไฟล์จากเครื่อง' : '🔗 สลับไปใส่เป็น URL' }}
+              </button>
+            </div>
+
+            <!-- Upload File Input -->
+            <div *ngIf="!useCustomUrl" class="space-y-2">
+              <div *ngIf="previewImageUrl" class="relative w-28 h-28 rounded-xl overflow-hidden border border-slate-200 shadow-xs group">
+                <img [src]="previewImageUrl" class="w-full h-full object-cover" />
+                <button type="button" (click)="removeImage()"
+                        class="absolute top-1.5 right-1.5 p-1 rounded-full bg-rose-600 text-white opacity-90 hover:opacity-100 shadow-sm transition" title="ลบรูปภาพ">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div *ngIf="!previewImageUrl" class="border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-4 text-center cursor-pointer transition bg-slate-50/60 hover:bg-blue-50/30"
+                   (click)="fileInput.click()">
+                <svg class="w-8 h-8 mx-auto text-slate-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p class="text-xs font-medium text-slate-700">คลิกเพื่อเลือกไฟล์รูปภาพจากเครื่อง</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">รองรับ JPG, PNG, WEBP ขนาดไม่เกิน 5MB</p>
+              </div>
+              <input #fileInput type="file" accept="image/*" class="hidden" (change)="onFileSelected($event)" />
+            </div>
+
+            <!-- Custom URL Input -->
+            <div *ngIf="useCustomUrl" class="space-y-2">
+              <input type="url" [(ngModel)]="formImageUrl" name="imageUrl" (input)="onUrlInput()"
+                     placeholder="https://images.unsplash.com/... หรือ URL รูปภาพ"
+                     class="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+              <div *ngIf="previewImageUrl" class="w-24 h-24 rounded-lg overflow-hidden border border-slate-200 shadow-xs">
+                <img [src]="previewImageUrl" class="w-full h-full object-cover" (error)="previewImageUrl = ''" />
+              </div>
+            </div>
+          </div>
+
           <!-- Description -->
           <div>
             <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">รายละเอียด / สเปกเพิ่มเติม</label>
@@ -238,9 +279,14 @@ import { Equipment, Category } from '../../core/models/types';
         </div>
 
         <div class="p-6 space-y-4">
-          <div class="p-3 rounded-lg bg-blue-50 border border-blue-100 text-blue-900 text-xs">
-            <span class="font-semibold block text-blue-950 text-sm mb-0.5">{{ reqEquipment?.name }}</span>
-            <span>หมวดหมู่: {{ reqEquipment?.category?.name }} · สถานที่เก็บ: {{ reqEquipment?.location || 'Storage' }}</span>
+          <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs flex items-center gap-3.5">
+            <div class="w-14 h-14 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 shadow-2xs">
+              <img [src]="getEquipmentImageUrl(reqEquipment)" [alt]="reqEquipment?.name" class="w-full h-full object-cover" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <span class="font-semibold block text-slate-950 text-sm mb-0.5 truncate">{{ reqEquipment?.name }}</span>
+              <span class="text-slate-500 block text-[11px]">หมวดหมู่: {{ reqEquipment?.category?.name || '-' }} · สถานที่: {{ reqEquipment?.location || 'คลังอุปกรณ์' }}</span>
+            </div>
           </div>
 
           <div *ngIf="reqEquipment?.isConsumable">
@@ -298,6 +344,10 @@ export class EquipmentListComponent implements OnInit {
   formStatus: any = 'AVAILABLE';
   formLocation = '';
   formDescription = '';
+  formImageUrl = '';
+  previewImageUrl = '';
+  selectedImageFile: File | null = null;
+  useCustomUrl = false;
 
   // QR Modal
   showQrModal = signal(false);
@@ -321,12 +371,14 @@ export class EquipmentListComponent implements OnInit {
       tooltipField: 'name',
       cellRenderer: (params: any) => {
         const item = params.data as Equipment;
-        const icon = item.isConsumable ? '⚡' : '💻';
+        const imgUrl = this.getEquipmentImageUrl(item);
         return `
           <div class="flex items-center gap-3 h-full py-1">
-            <span class="text-xl shrink-0">${icon}</span>
+            <div class="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 shrink-0 flex items-center justify-center shadow-2xs">
+              <img src="${imgUrl}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=120&q=80'" />
+            </div>
             <div class="min-w-0 flex-1 leading-normal">
-              <span class="font-semibold text-slate-900 block truncate text-xs" title="${item.name}">${item.name}</span>
+              <span class="font-semibold text-slate-900 block truncate text-xs hover:text-blue-600 transition cursor-pointer" title="${item.name}">${item.name}</span>
               <span class="text-[11px] text-slate-400 block truncate">${item.location || 'คลังอุปกรณ์'}</span>
             </div>
           </div>
@@ -508,6 +560,10 @@ export class EquipmentListComponent implements OnInit {
     this.formStatus = 'AVAILABLE';
     this.formLocation = '';
     this.formDescription = '';
+    this.formImageUrl = '';
+    this.previewImageUrl = '';
+    this.selectedImageFile = null;
+    this.useCustomUrl = false;
     this.showModal.set(true);
   }
 
@@ -522,6 +578,10 @@ export class EquipmentListComponent implements OnInit {
     this.formStatus = item.status;
     this.formLocation = item.location || '';
     this.formDescription = item.description || '';
+    this.formImageUrl = item.imageUrl || '';
+    this.previewImageUrl = item.imageUrl ? this.getEquipmentImageUrl(item) : '';
+    this.selectedImageFile = null;
+    this.useCustomUrl = !!item.imageUrl && (item.imageUrl.startsWith('http://') || item.imageUrl.startsWith('https://'));
     this.showModal.set(true);
   }
 
@@ -529,19 +589,83 @@ export class EquipmentListComponent implements OnInit {
     this.showModal.set(false);
   }
 
+  onFileSelected(event: any): void {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('ขนาดไฟล์เกิน 5MB กรุณาเลือกรูปภาพที่มีขนาดเล็กลง');
+        return;
+      }
+      this.selectedImageFile = file;
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.previewImageUrl = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  removeImage(): void {
+    this.selectedImageFile = null;
+    this.previewImageUrl = '';
+    this.formImageUrl = '';
+  }
+
+  onUrlInput(): void {
+    this.previewImageUrl = this.formImageUrl.trim();
+  }
+
+  getDefaultImage(item: Equipment | null): string {
+    if (!item) return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=120&q=80';
+    const catName = item.category?.name?.toLowerCase() || '';
+    const name = item.name.toLowerCase();
+    if (name.includes('macbook') || name.includes('apple')) return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('thinkpad') || catName.includes('laptop')) return 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('monitor') || catName.includes('monitor')) return 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('mouse') || name.includes('keyboard') || catName.includes('periph')) return 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('switch') || name.includes('wifi') || catName.includes('network')) return 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('cable') || name.includes('adapter') || item.isConsumable) return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=120&q=80';
+    return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=120&q=80';
+  }
+
+  getEquipmentImageUrl(item: Equipment | null): string {
+    if (!item) return this.getDefaultImage(null);
+    return this.equipmentService.resolveImageUrl(item.imageUrl) || this.getDefaultImage(item);
+  }
+
   saveEquipment(): void {
     if (!this.formName || !this.formCategoryId) return;
     this.modalSaving.set(true);
 
+    // If user selected a new file to upload from machine
+    if (this.selectedImageFile) {
+      this.equipmentService.uploadImage(this.selectedImageFile).subscribe({
+        next: (res) => {
+          this.formImageUrl = res.url;
+          this.selectedImageFile = null;
+          this.proceedSave();
+        },
+        error: (err) => {
+          this.modalSaving.set(false);
+          alert(err.error?.message || 'ไม่สามารถอัปโหลดรูปภาพได้');
+        }
+      });
+    } else {
+      this.proceedSave();
+    }
+  }
+
+  private proceedSave(): void {
     const payload: Partial<Equipment> = {
-      name: this.formName,
+      name: this.formName.trim(),
       categoryId: this.formCategoryId,
-      serialNumber: this.formIsConsumable ? null : this.formSerialNumber,
+      serialNumber: this.formIsConsumable ? null : (this.formSerialNumber.trim() || null),
       isConsumable: this.formIsConsumable,
       quantity: this.formIsConsumable ? Number(this.formQuantity) : 1,
       status: this.formStatus,
-      location: this.formLocation,
-      description: this.formDescription
+      location: this.formLocation.trim() || null,
+      description: this.formDescription.trim() || null,
+      imageUrl: this.formImageUrl.trim() || null
     };
 
     if (this.isEditing() && this.editingId) {

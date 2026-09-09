@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RequestService } from '../../core/services/request.service';
+import { EquipmentService } from '../../core/services/equipment.service';
 import { AuthService } from '../../core/services/auth.service';
 import { RequestRecord } from '../../core/models/types';
 
@@ -84,13 +85,18 @@ import { RequestRecord } from '../../core/models/types';
 
           <!-- Items detail inside Request -->
           <div class="pt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
-            <div *ngFor="let item of req.items" class="p-2.5 rounded-lg bg-slate-50 border border-slate-150">
-              <span class="font-semibold text-slate-900 block">{{ item.equipment?.name }}</span>
-              <div class="text-[11px] text-slate-500 mt-1 space-y-0.5">
-                <p>จำนวน: <span class="font-semibold text-slate-700">{{ item.quantity }}</span></p>
-                <p *ngIf="item.equipment?.serialNumber">ซีเรียล#: <span class="font-mono text-slate-700">{{ item.equipment.serialNumber }}</span></p>
-                <p *ngIf="item.checkedOutAt">วันที่เริ่มเบิก: {{ item.checkedOutAt | date:'short' }}</p>
-                <p *ngIf="item.returnedAt" class="text-emerald-600 font-medium">วันที่ส่งคืน: {{ item.returnedAt | date:'short' }}</p>
+            <div *ngFor="let item of req.items" class="p-2.5 rounded-xl bg-slate-50 border border-slate-150 flex items-start gap-3">
+              <div class="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 shadow-2xs">
+                <img [src]="getItemImage(item.equipment)" [alt]="item.equipment?.name" class="w-full h-full object-cover" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <span class="font-semibold text-slate-900 block truncate text-xs">{{ item.equipment?.name }}</span>
+                <div class="text-[11px] text-slate-500 mt-0.5 space-y-0.5">
+                  <p>จำนวน: <span class="font-semibold text-slate-700">{{ item.quantity }}</span></p>
+                  <p *ngIf="item.equipment?.serialNumber">ซีเรียล#: <span class="font-mono text-slate-700">{{ item.equipment.serialNumber }}</span></p>
+                  <p *ngIf="item.checkedOutAt">วันที่เริ่มเบิก: {{ item.checkedOutAt | date:'short' }}</p>
+                  <p *ngIf="item.returnedAt" class="text-emerald-600 font-medium">วันที่ส่งคืน: {{ item.returnedAt | date:'short' }}</p>
+                </div>
               </div>
             </div>
 
@@ -114,10 +120,25 @@ import { RequestRecord } from '../../core/models/types';
 })
 export class RequestListComponent implements OnInit {
   requestService = inject(RequestService);
+  equipmentService = inject(EquipmentService);
   auth = inject(AuthService);
 
   requests = signal<RequestRecord[]>([]);
   selectedStatus = '';
+
+  getItemImage(eq: any): string {
+    if (!eq) return 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&w=120&q=80';
+    if (eq.imageUrl) {
+      return this.equipmentService.resolveImageUrl(eq.imageUrl);
+    }
+    const name = (eq.name || '').toLowerCase();
+    if (name.includes('macbook') || name.includes('apple')) return 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('thinkpad') || name.includes('laptop')) return 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('monitor')) return 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('mouse') || name.includes('keyboard')) return 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=120&q=80';
+    if (name.includes('switch') || name.includes('network')) return 'https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=120&q=80';
+    return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=120&q=80';
+  }
 
   ngOnInit(): void {
     this.loadRequests();
