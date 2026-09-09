@@ -7,6 +7,7 @@ import { equipmentRoutes } from './routes/equipment.routes.js';
 import { requestRoutes } from './routes/request.routes.js';
 import { dashboardRoutes } from './routes/dashboard.routes.js';
 import { historyRoutes } from './routes/history.routes.js';
+import { userRoutes } from './routes/user.routes.js';
 import { errorHandler } from './middleware/error.middleware.js';
 
 const app = express();
@@ -26,6 +27,7 @@ app.use('/api/equipment', equipmentRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

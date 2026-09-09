@@ -8,6 +8,11 @@ export interface User {
   department?: string;
   role: Role;
   isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  _count?: {
+    requests?: number;
+  };
 }
 
 export interface AuthResponse {

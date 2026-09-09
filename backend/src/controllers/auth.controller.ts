@@ -49,32 +49,43 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { employeeId, email, password, fullName, department, role } = req.body;
-    if (!employeeId || !email || !password || !fullName) {
-      res.status(400).json({ message: 'Missing required fields' });
+    const { employeeId, email, password, fullName, department } = req.body;
+    if (!email || !password || !fullName) {
+      res.status(400).json({ message: 'กรุณากรอกชื่อ-นามสกุล, อีเมล และรหัสผ่าน' });
       return;
     }
 
+    if (password.length < 6) {
+      res.status(400).json({ message: 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร' });
+      return;
+    }
+
+    // Auto-generate employeeId if not provided
+    const finalEmpId = employeeId?.trim() || `EMP-${Date.now().toString().slice(-6)}`;
+
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email }, { employeeId }]
+        OR: [
+          { email: email.trim().toLowerCase() },
+          { employeeId: finalEmpId }
+        ]
       }
     });
 
     if (existingUser) {
-      res.status(409).json({ message: 'Email or Employee ID already in use' });
+      res.status(409).json({ message: 'อีเมลหรือรหัสพนักงานนี้มีอยู่ในระบบแล้ว' });
       return;
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
       data: {
-        employeeId,
-        email,
+        employeeId: finalEmpId,
+        email: email.trim().toLowerCase(),
         passwordHash,
-        fullName,
-        department,
-        role: role === 'ADMIN' ? 'ADMIN' : 'USER'
+        fullName: fullName.trim(),
+        department: department?.trim() || null,
+        role: 'USER'
       }
     });
 

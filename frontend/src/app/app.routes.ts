@@ -20,6 +20,7 @@ export const routes: Routes = [
       { path: 'dashboard', component: DashboardComponent, canActivate: [adminGuard] },
       { path: 'equipment', component: EquipmentListComponent },
       { path: 'categories', component: CategoryListComponent, canActivate: [adminGuard] },
+      { path: 'users', loadComponent: () => import('./features/users/user-list.component').then(m => m.UserListComponent), canActivate: [adminGuard] },
       { path: 'requests', component: RequestListComponent },
       { path: 'history', component: HistoryListComponent },
       // { path: 'qr-scanner', component: QrScannerComponent }, // ตัดออกชั่วคราว รอทำในอนาคต
