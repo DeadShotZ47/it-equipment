@@ -65,7 +65,8 @@ import { HistoryRow } from '../../core/models/types';
           [rowData]="historyRows()"
           [columnDefs]="colDefs"
           [pagination]="true"
-          [paginationPageSize]="25"
+          [paginationPageSize]="20"
+          [paginationPageSizeSelector]="[10, 20, 50, 100]"
           [rowHeight]="58"
           [headerHeight]="44"
           (gridReady)="onGridReady($event)">

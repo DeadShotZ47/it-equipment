@@ -89,6 +89,7 @@ import { Equipment, Category } from '../../core/models/types';
           [columnDefs]="colDefs"
           [pagination]="true"
           [paginationPageSize]="20"
+          [paginationPageSizeSelector]="[10, 20, 50, 100]"
           [rowHeight]="58"
           [headerHeight]="44"
           (gridReady)="onGridReady($event)">
