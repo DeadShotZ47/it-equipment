@@ -1,0 +1,41 @@
+﻿# Dependencies
+node_modules/
+*/node_modules/
+
+# Production / Build output
+dist/
+*/dist/
+tmp/
+out-tsc/
+bazel-out/
+.angular/
+*/.angular/
+
+# Environment variables
+.env
+*.env
+*.env.local
+!*.env.example
+
+# Batch & shell scripts
+*.bat
+*.cmd
+
+# Temporary / Local docs
+STARTUP.md
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
