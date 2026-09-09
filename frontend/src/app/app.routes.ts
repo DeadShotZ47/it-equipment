@@ -22,7 +22,7 @@ export const routes: Routes = [
       { path: 'categories', component: CategoryListComponent, canActivate: [adminGuard] },
       { path: 'requests', component: RequestListComponent },
       { path: 'history', component: HistoryListComponent },
-      { path: 'qr-scanner', component: QrScannerComponent },
+      // { path: 'qr-scanner', component: QrScannerComponent }, // ตัดออกชั่วคราว รอทำในอนาคต
       { path: '', redirectTo: 'equipment', pathMatch: 'full' }
     ]
   },

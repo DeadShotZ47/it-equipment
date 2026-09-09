@@ -18,7 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
         <div>
           <span class="text-white font-semibold text-base tracking-wide flex items-center gap-1.5">
-            CheqIT
+            ReqIT
             <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hub</span>
           </span>
           <p class="text-[11px] text-slate-400 leading-tight">ระบบเบิกจ่ายอุปกรณ์ IT</p>
@@ -77,16 +77,6 @@ import { AuthService } from '../../core/services/auth.service';
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           ประวัติการเบิก-คืน
-        </a>
-
-        <!-- QR Scanner -->
-        <a routerLink="/qr-scanner"
-           routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
-           class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
-          <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-          </svg>
-          สแกน QR รับ-คืนอุปกรณ์
         </a>
       </nav>
 

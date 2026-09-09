@@ -16,7 +16,7 @@
   background: #94a3b8;
 }
 
-/* AG-Grid quartz customizations to match Cheqroom */
+/* AG-Grid quartz customizations */
 .ag-theme-quartz {
   --ag-font-family: 'Inter', 'Prompt', sans-serif;
   --ag-font-size: 13px;

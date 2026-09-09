@@ -21,7 +21,7 @@ import { AuthService } from '../core/services/auth.service';
             <div class="flex items-center gap-2 text-sm text-slate-500">
               <span class="font-medium text-slate-800">ระบบบริหารจัดการและเบิกจ่ายอุปกรณ์ IT</span>
               <span>/</span>
-              <span class="text-blue-600 font-medium">CheqIT Platform</span>
+              <span class="text-blue-600 font-medium">ReqIT Platform</span>
             </div>
           </div>
 

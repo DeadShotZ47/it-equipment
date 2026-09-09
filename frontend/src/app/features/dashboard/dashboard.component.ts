@@ -60,7 +60,7 @@ export interface DonutChartOptions {
         </div>
       </div>
 
-      <!-- 4 Core Summary Cards (Cheqroom inspired) -->
+      <!-- 4 Core Summary Cards -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Card 1: Total Equipment -->
         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs hover:shadow-md transition">

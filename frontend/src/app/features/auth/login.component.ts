@@ -19,7 +19,7 @@ import { AuthService } from '../../core/services/auth.service';
             </svg>
           </div>
           <h1 class="text-2xl font-bold tracking-tight">ระบบเบิกจ่ายอุปกรณ์ IT</h1>
-          <p class="text-blue-200 text-xs mt-1">CheqIT · จัดการคลังอุปกรณ์และสินทรัพย์ไอที</p>
+          <p class="text-blue-200 text-xs mt-1">ReqIT · จัดการคลังอุปกรณ์และสินทรัพย์ไอที</p>
         </div>
 
         <!-- Login Form -->
