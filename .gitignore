@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 */node_modules/
 
@@ -20,6 +20,7 @@ bazel-out/
 # Batch & shell scripts
 *.bat
 *.cmd
+*.exe
 
 # Temporary / Local docs
 STARTUP.md
