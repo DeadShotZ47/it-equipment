@@ -123,13 +123,15 @@ export class EquipmentPageComponent implements OnInit {
 
   loadCategories(): void {
     this.categoryService.getCategories().subscribe({
-      next: (cats) => this.categories.set(cats)
+      next: (cats) => this.categories.set(cats),
+      error: (err) => console.error('[EquipmentPage] ❌ ไม่สามารถโหลดหมวดหมู่ได้:', err)
     });
   }
 
   loadEquipment(): void {
     this.equipmentService.getEquipmentList(this.currentFilters).subscribe({
-      next: (res) => this.equipmentList.set(res.items)
+      next: (res) => this.equipmentList.set(res.items),
+      error: (err) => console.error('[EquipmentPage] ❌ ไม่สามารถโหลดรายการอุปกรณ์ได้:', err)
     });
   }
 
