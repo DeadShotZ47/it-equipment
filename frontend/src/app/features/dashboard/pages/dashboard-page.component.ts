@@ -12,7 +12,8 @@ import {
   ApexLegend,
   ApexPlotOptions,
   ApexNonAxisChartSeries,
-  ApexResponsive
+  ApexResponsive,
+  ApexTooltip
 } from 'ng-apexcharts';
 import { DashboardService } from '../services/dashboard.service';
 import { DashboardStats, MonthlyTrend, CategoryStat, TrendFilterOptions } from '../models/dashboard.model';
@@ -28,6 +29,7 @@ export interface BarChartOptions {
   stroke: ApexStroke;
   legend: ApexLegend;
   colors: string[];
+  tooltip?: ApexTooltip;
 }
 
 export interface DonutChartOptions {
@@ -164,7 +166,7 @@ export interface DonutChartOptions {
                 <div class="flex items-center gap-1.5 ml-1">
                   <button type="button" (click)="onMonthChange(8)"
                           [class]="selectedMonth() === 8 ? 'px-2 py-0.5 rounded bg-blue-600 text-white text-[11px] font-medium' : 'px-2 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px] border border-blue-200 font-medium'">
-                    สิงหาคม (มี Mock Data)
+                    สิงหาคม
                   </button>
                   <button type="button" (click)="onMonthChange(9)"
                           [class]="selectedMonth() === 9 ? 'px-2 py-0.5 rounded bg-blue-600 text-white text-[11px] font-medium' : 'px-2 py-0.5 rounded bg-slate-200 text-slate-700 hover:bg-slate-300 text-[11px] font-medium'">
@@ -216,7 +218,8 @@ export interface DonutChartOptions {
               [dataLabels]="barChartOptions.dataLabels"
               [stroke]="barChartOptions.stroke"
               [colors]="barChartOptions.colors"
-              [legend]="barChartOptions.legend">
+              [legend]="barChartOptions.legend"
+              [tooltip]="barChartOptions.tooltip">
             </apx-chart>
           </div>
 
@@ -470,7 +473,15 @@ export class DashboardPageComponent implements OnInit {
         title: { text: 'จำนวนคำขอ' }
       },
       colors: ['#2563eb', '#10b981', '#ef4444'],
-      legend: { position: 'top' }
+      legend: { position: 'top' },
+      tooltip: {
+        shared: true,
+        intersect: false,
+        theme: 'light',
+        y: {
+          formatter: (val: number) => `${val} รายการ`
+        }
+      }
     };
   }
 
