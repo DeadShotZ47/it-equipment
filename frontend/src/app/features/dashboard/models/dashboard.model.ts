@@ -13,11 +13,22 @@ export interface DashboardStats {
 }
 
 export interface MonthlyTrend {
-  month: string;
+  label?: string;
+  month?: string;
+  day?: number;
+  date?: string;
   total: number;
   approved: number;
   rejected: number;
   returned: number;
+}
+
+export interface TrendFilterOptions {
+  mode: 'year' | 'month' | 'range';
+  year?: number;
+  month?: number;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface CategoryStat {

@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import {
   ApexAxisChartSeries,
@@ -14,7 +15,7 @@ import {
   ApexResponsive
 } from 'ng-apexcharts';
 import { DashboardService } from '../services/dashboard.service';
-import { DashboardStats, MonthlyTrend, CategoryStat } from '../models/dashboard.model';
+import { DashboardStats, MonthlyTrend, CategoryStat, TrendFilterOptions } from '../models/dashboard.model';
 import { StatCardComponent } from '../components/stat-card.component';
 
 export interface BarChartOptions {
@@ -41,7 +42,7 @@ export interface DonutChartOptions {
 @Component({
   selector: 'app-dashboard-page',
   standalone: true,
-  imports: [CommonModule, NgApexchartsModule, StatCardComponent],
+  imports: [CommonModule, FormsModule, NgApexchartsModule, StatCardComponent],
   template: `
     <div class="space-y-6">
       <!-- Page Header -->
@@ -107,26 +108,105 @@ export interface DonutChartOptions {
       <!-- Charts Section (ApexCharts) -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Monthly Checkout Trends -->
-        <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-xs">
-          <div class="flex items-center justify-between mb-4">
-            <div>
-              <h2 class="text-base font-semibold text-slate-900">แนวโน้มการเบิก-จ่ายอุปกรณ์รายเดือน</h2>
-              <p class="text-xs text-slate-400">คำนวณและจัดกลุ่มตามเดือนบน PostgreSQL โดยตรง (DB Aggregation)</p>
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+          <div>
+            <!-- Header with Title & Mode Switcher -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                  <span>{{ trendTitle() }}</span>
+                </h2>
+                <p class="text-xs text-slate-400 mt-0.5">
+                  {{ trendSubtitle() }}
+                </p>
+              </div>
+
+              <!-- Mode Switcher Buttons -->
+              <div class="inline-flex rounded-lg bg-slate-100 p-1 border border-slate-200 text-xs font-medium self-start sm:self-auto shrink-0">
+                <button type="button" (click)="setMode('year')"
+                        [class]="trendMode() === 'year' ? 'bg-white text-blue-600 font-bold shadow-2xs rounded-md px-3 py-1 transition' : 'text-slate-600 hover:text-slate-900 px-3 py-1 transition'">
+                  📅 ภาพรวมทั้งปี
+                </button>
+                <button type="button" (click)="setMode('month')"
+                        [class]="trendMode() === 'month' ? 'bg-white text-blue-600 font-bold shadow-2xs rounded-md px-3 py-1 transition' : 'text-slate-600 hover:text-slate-900 px-3 py-1 transition'">
+                  📆 เลือกดูรายเดือน
+                </button>
+                <button type="button" (click)="setMode('range')"
+                        [class]="trendMode() === 'range' ? 'bg-white text-blue-600 font-bold shadow-2xs rounded-md px-3 py-1 transition' : 'text-slate-600 hover:text-slate-900 px-3 py-1 transition'">
+                  ⏱️ กำหนดช่วงวัน
+                </button>
+              </div>
             </div>
-            <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">ปี {{ currentYear }}</span>
+
+            <!-- Sub Filter Controls depending on active mode -->
+            <div class="mt-3 py-2 px-3 bg-slate-50/80 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <!-- Mode: Year -->
+              <div *ngIf="trendMode() === 'year'" class="flex items-center gap-2">
+                <span class="text-slate-500 font-medium">เลือกปี:</span>
+                <select [ngModel]="selectedYear()" (ngModelChange)="onYearChange($event)"
+                        class="px-2.5 py-1 bg-white rounded border border-slate-300 font-semibold text-slate-700 focus:ring-1 focus:ring-blue-500">
+                  <option *ngFor="let y of yearsList" [value]="y">{{ y }}</option>
+                </select>
+                <span class="text-[11px] text-slate-400">แสดงผลรวมทั้ง 12 เดือนของปี</span>
+              </div>
+
+              <!-- Mode: Month -->
+              <div *ngIf="trendMode() === 'month'" class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-500 font-medium">เลือกเดือน:</span>
+                <select [ngModel]="selectedMonth()" (ngModelChange)="onMonthChange($event)"
+                        class="px-2.5 py-1 bg-white rounded border border-slate-300 font-semibold text-slate-700 focus:ring-1 focus:ring-blue-500">
+                  <option *ngFor="let m of monthsList" [value]="m.value">{{ m.label }}</option>
+                </select>
+                <select [ngModel]="selectedYear()" (ngModelChange)="onYearChange($event)"
+                        class="px-2 py-1 bg-white rounded border border-slate-300 font-semibold text-slate-700 focus:ring-1 focus:ring-blue-500">
+                  <option *ngFor="let y of yearsList" [value]="y">{{ y }}</option>
+                </select>
+                <div class="flex items-center gap-1.5 ml-1">
+                  <button type="button" (click)="onMonthChange(8)"
+                          [class]="selectedMonth() === 8 ? 'px-2 py-0.5 rounded bg-blue-600 text-white text-[11px] font-medium' : 'px-2 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 text-[11px] border border-blue-200 font-medium'">
+                    สิงหาคม (มี Mock Data)
+                  </button>
+                  <button type="button" (click)="onMonthChange(9)"
+                          [class]="selectedMonth() === 9 ? 'px-2 py-0.5 rounded bg-blue-600 text-white text-[11px] font-medium' : 'px-2 py-0.5 rounded bg-slate-200 text-slate-700 hover:bg-slate-300 text-[11px] font-medium'">
+                    กันยายน (ปัจจุบัน)
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mode: Range -->
+              <div *ngIf="trendMode() === 'range'" class="flex flex-wrap items-center gap-2">
+                <span class="text-slate-500 font-medium">จาก:</span>
+                <input type="date" [ngModel]="startDate()" (ngModelChange)="onStartDateChange($event)"
+                       class="px-2 py-1 bg-white rounded border border-slate-300 text-slate-700 text-xs focus:ring-1 focus:ring-blue-500" />
+                <span class="text-slate-400">ถึง:</span>
+                <input type="date" [ngModel]="endDate()" (ngModelChange)="onEndDateChange($event)"
+                       class="px-2 py-1 bg-white rounded border border-slate-300 text-slate-700 text-xs focus:ring-1 focus:ring-blue-500" />
+                <div class="flex items-center gap-1 ml-1">
+                  <button type="button" (click)="setQuickRange('aug_sep')" class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-[11px] border border-indigo-200 font-medium">
+                    15 ส.ค. - วันนี้
+                  </button>
+                  <button type="button" (click)="setQuickRange('last7')" class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-medium">
+                    7 วันล่าสุด
+                  </button>
+                  <button type="button" (click)="setQuickRange('last30')" class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 text-[11px] font-medium">
+                    30 วัน
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Loading State -->
-          <div *ngIf="isLoadingTrends()" class="h-80 flex flex-col items-center justify-center text-slate-400">
+          <div *ngIf="isLoadingTrends()" class="h-80 flex flex-col items-center justify-center text-slate-400 my-4">
             <svg class="animate-spin w-8 h-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
             </svg>
-            <p class="text-xs">กำลังคำนวณและโหลดแนวโน้มรายเดือน...</p>
+            <p class="text-xs">กำลังคำนวณและประมวลผลสถิติ...</p>
           </div>
 
           <!-- Chart Display -->
-          <div *ngIf="!isLoadingTrends() && barChartOptions" class="w-full">
+          <div *ngIf="!isLoadingTrends() && barChartOptions" class="w-full mt-4">
             <apx-chart
               [series]="barChartOptions.series"
               [chart]="barChartOptions.chart"
@@ -140,8 +220,8 @@ export interface DonutChartOptions {
             </apx-chart>
           </div>
 
-          <div *ngIf="!isLoadingTrends() && !barChartOptions" class="h-80 flex flex-col items-center justify-center text-slate-400">
-            <p class="text-xs text-rose-500 font-medium">ไม่สามารถโหลดข้อมูลแนวโน้มรายเดือนได้</p>
+          <div *ngIf="!isLoadingTrends() && !barChartOptions" class="h-80 flex flex-col items-center justify-center text-slate-400 my-4">
+            <p class="text-xs text-rose-500 font-medium">ไม่พบข้อมูลคำขอในช่วงเวลาที่เลือก</p>
           </div>
         </div>
 
@@ -194,6 +274,53 @@ export class DashboardPageComponent implements OnInit {
   isLoadingTrends = signal<boolean>(true);
   isLoadingCategories = signal<boolean>(true);
 
+  // Trend Filter States
+  trendMode = signal<'year' | 'month' | 'range'>('year');
+  selectedYear = signal<number>(new Date().getFullYear());
+  selectedMonth = signal<number>(8); // Default to August (month 8) where we have mock data, or current month
+  startDate = signal<string>('2026-08-15');
+  endDate = signal<string>(new Date().toISOString().slice(0, 10));
+
+  monthsList = [
+    { value: 1, label: 'มกราคม (Jan)' },
+    { value: 2, label: 'กุมภาพันธ์ (Feb)' },
+    { value: 3, label: 'มีนาคม (Mar)' },
+    { value: 4, label: 'เมษายน (Apr)' },
+    { value: 5, label: 'พฤษภาคม (May)' },
+    { value: 6, label: 'มิถุนายน (Jun)' },
+    { value: 7, label: 'กรกฎาคม (Jul)' },
+    { value: 8, label: 'สิงหาคม (Aug)' },
+    { value: 9, label: 'กันยายน (Sep)' },
+    { value: 10, label: 'ตุลาคม (Oct)' },
+    { value: 11, label: 'พฤศจิกายน (Nov)' },
+    { value: 12, label: 'ธันวาคม (Dec)' }
+  ];
+
+  yearsList = [2025, 2026, 2027];
+
+  trendTitle = computed(() => {
+    const mode = this.trendMode();
+    if (mode === 'year') {
+      return `แนวโน้มการเบิก-จ่ายอุปกรณ์รายเดือน (ปี ${this.selectedYear()})`;
+    } else if (mode === 'month') {
+      const m = this.monthsList.find((item) => item.value === Number(this.selectedMonth()));
+      return `สถิติการเบิก-จ่ายรายวัน (${m?.label || ''} ${this.selectedYear()})`;
+    } else {
+      return `สถิติการเบิก-จ่ายตามช่วงวัน (${this.startDate()} ถึง ${this.endDate()})`;
+    }
+  });
+
+  trendSubtitle = computed(() => {
+    const mode = this.trendMode();
+    if (mode === 'year') {
+      return 'คำนวณและจัดกลุ่มตาม 12 เดือนบน PostgreSQL โดยตรง (DB Aggregation)';
+    } else if (mode === 'month') {
+      return 'แจกแจงสถิติแยกรายวัน (Day 1 - สิ้นเดือน) ช่วยวิเคราะห์ความถี่การใช้งาน';
+    } else {
+      return 'แสดงแนวโน้มแบบละเอียดตามช่วงวันที่ผู้บริหารกำหนดเอง';
+    }
+  });
+
   barChartOptions: BarChartOptions | null = null;
   donutChartOptions: DonutChartOptions | null = null;
 
@@ -207,17 +334,7 @@ export class DashboardPageComponent implements OnInit {
       error: (err) => console.error('Failed to load stats', err)
     });
 
-    this.isLoadingTrends.set(true);
-    this.dashboardService.getMonthlyTrends(this.currentYear).subscribe({
-      next: (trends: MonthlyTrend[]) => {
-        this.setupBarChart(trends);
-        this.isLoadingTrends.set(false);
-      },
-      error: (err) => {
-        console.error('Failed to load trends', err);
-        this.isLoadingTrends.set(false);
-      }
-    });
+    this.loadTrendData();
 
     this.isLoadingCategories.set(true);
     this.dashboardService.getEquipmentByCategory().subscribe({
@@ -232,11 +349,90 @@ export class DashboardPageComponent implements OnInit {
     });
   }
 
+  setMode(mode: 'year' | 'month' | 'range'): void {
+    this.trendMode.set(mode);
+    this.loadTrendData();
+  }
+
+  onMonthChange(m: any): void {
+    this.selectedMonth.set(Number(m));
+    this.loadTrendData();
+  }
+
+  onYearChange(y: any): void {
+    this.selectedYear.set(Number(y));
+    this.loadTrendData();
+  }
+
+  onStartDateChange(d: string): void {
+    this.startDate.set(d);
+    if (this.startDate() && this.endDate()) {
+      this.loadTrendData();
+    }
+  }
+
+  onEndDateChange(d: string): void {
+    this.endDate.set(d);
+    if (this.startDate() && this.endDate()) {
+      this.loadTrendData();
+    }
+  }
+
+  setQuickRange(type: 'aug_sep' | 'last7' | 'last30'): void {
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    if (type === 'aug_sep') {
+      this.startDate.set('2026-08-15');
+      this.endDate.set(todayStr);
+    } else if (type === 'last7') {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 7);
+      this.startDate.set(d.toISOString().slice(0, 10));
+      this.endDate.set(todayStr);
+    } else if (type === 'last30') {
+      const d = new Date(today);
+      d.setDate(d.getDate() - 30);
+      this.startDate.set(d.toISOString().slice(0, 10));
+      this.endDate.set(todayStr);
+    }
+    this.loadTrendData();
+  }
+
+  loadTrendData(): void {
+    this.isLoadingTrends.set(true);
+    const mode = this.trendMode();
+    const options: TrendFilterOptions = {
+      mode,
+      year: this.selectedYear(),
+      month: this.selectedMonth(),
+      startDate: this.startDate(),
+      endDate: this.endDate()
+    };
+
+    this.dashboardService.getMonthlyTrends(options).subscribe({
+      next: (trends: MonthlyTrend[]) => {
+        this.setupBarChart(trends);
+        this.isLoadingTrends.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to load trends', err);
+        this.isLoadingTrends.set(false);
+      }
+    });
+  }
+
   private setupBarChart(trends: MonthlyTrend[]): void {
-    const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    if (!trends || trends.length === 0) {
+      this.barChartOptions = null;
+      return;
+    }
+
+    const categories = trends.map((t) => t.label || t.month || '');
     const approvedData = trends.map((t) => t.approved);
     const returnedData = trends.map((t) => t.returned);
     const rejectedData = trends.map((t) => t.rejected);
+
+    const isDense = categories.length > 15;
 
     this.barChartOptions = {
       series: [
@@ -246,20 +442,30 @@ export class DashboardPageComponent implements OnInit {
       ],
       chart: {
         type: 'bar',
-        height: 320,
+        height: 340,
         fontFamily: 'Inter, Prompt, sans-serif',
         toolbar: { show: false }
       },
       plotOptions: {
         bar: {
           horizontal: false,
-          columnWidth: '55%',
-          borderRadius: 4
+          columnWidth: isDense ? '70%' : '50%',
+          borderRadius: isDense ? 2 : 4
         }
       },
       dataLabels: { enabled: false },
-      stroke: { show: true, width: 2, colors: ['transparent'] },
-      xaxis: { categories: thaiMonths },
+      stroke: { show: true, width: isDense ? 1 : 2, colors: ['transparent'] },
+      xaxis: {
+        categories,
+        labels: {
+          rotate: isDense ? -45 : 0,
+          rotateAlways: isDense,
+          style: {
+            fontSize: isDense ? '10px' : '11px'
+          }
+        },
+        tickAmount: isDense ? Math.min(categories.length, 31) : undefined
+      },
       yaxis: {
         title: { text: 'จำนวนคำขอ' }
       },
