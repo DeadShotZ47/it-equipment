@@ -9,7 +9,10 @@ import { environment } from '../../../environments/environment';
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private get apiUrl(): string {
+    const raw = (environment.apiUrl || 'http://localhost:3000/api').replace(/\/+$/, '');
+    return raw.endsWith('/api') ? `${raw}/auth` : `${raw}/api/auth`;
+  }
   private currentUserSignal = signal<User | null>(null);
 
   currentUser = computed(() => this.currentUserSignal());

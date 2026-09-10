@@ -227,7 +227,13 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'เข้าสู่ระบบไม่สำเร็จ โปรดตรวจสอบอีเมลและรหัสผ่าน');
+        if (err.status === 0) {
+          this.errorMessage.set('⚠️ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบ Network หรือ Tunnel URL');
+        } else if (err.status === 404) {
+          this.errorMessage.set('⚠️ ไม่พบ API Endpoint (404 Not Found) กรุณาตรวจสอบ URL ใน environment.ts');
+        } else {
+          this.errorMessage.set(err.error?.message || 'เข้าสู่ระบบไม่สำเร็จ โปรดตรวจสอบอีเมลและรหัสผ่าน');
+        }
       }
     });
   }
@@ -270,7 +276,11 @@ export class LoginComponent {
       },
       error: (err) => {
         this.loading.set(false);
-        this.errorMessage.set(err.error?.message || 'สมัครสมาชิกไม่สำเร็จ โปรดลองอีกครั้ง');
+        if (err.status === 0) {
+          this.errorMessage.set('⚠️ ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ Backend ได้ กรุณาตรวจสอบ Network หรือ Tunnel URL');
+        } else {
+          this.errorMessage.set(err.error?.message || 'สมัครสมาชิกไม่สำเร็จ โปรดลองอีกครั้ง');
+        }
       }
     });
   }

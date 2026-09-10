@@ -22,21 +22,31 @@ app.use(cors({
 
 app.use(express.json());
 
+// Request logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} -> ${res.statusCode} (${duration}ms) [Origin: ${req.headers.origin || 'none'}]`);
+  });
+  next();
+});
+
 // Static file serving for uploaded equipment images
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/categories', categoryRoutes);
-app.use('/api/equipment', equipmentRoutes);
-app.use('/api/requests', requestRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/history', historyRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/upload', uploadRoutes);
+// Routes - support both /api/* and root /* to prevent 404 if /api is omitted in client config
+app.use(['/api/auth', '/auth'], authRoutes);
+app.use(['/api/categories', '/categories'], categoryRoutes);
+app.use(['/api/equipment', '/equipment'], equipmentRoutes);
+app.use(['/api/requests', '/requests'], requestRoutes);
+app.use(['/api/dashboard', '/dashboard'], dashboardRoutes);
+app.use(['/api/history', '/history'], historyRoutes);
+app.use(['/api/users', '/users'], userRoutes);
+app.use(['/api/upload', '/upload'], uploadRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 

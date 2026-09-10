@@ -12,17 +12,36 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.isActive) {
-      res.status(401).json({ message: 'Invalid email or password' });
+    const cleanEmail = (email || '').trim().toLowerCase();
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: cleanEmail,
+          mode: 'insensitive'
+        }
+      }
+    });
+
+    if (!user) {
+      console.warn(`[Auth] ❌ เข้าสู่ระบบไม่สำเร็จ: ไม่พบอีเมล ${cleanEmail}`);
+      res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
+      return;
+    }
+
+    if (!user.isActive) {
+      console.warn(`[Auth] ❌ เข้าสู่ระบบไม่สำเร็จ: บัญชี ${cleanEmail} ถูกระงับ`);
+      res.status(403).json({ message: 'บัญชีผู้ใช้นี้ถูกปิดการใช้งาน กรุณาติดต่อผู้ดูแลระบบ' });
       return;
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      res.status(401).json({ message: 'Invalid email or password' });
+      console.warn(`[Auth] ❌ เข้าสู่ระบบไม่สำเร็จ: รหัสผ่านไม่ถูกต้องสำหรับ ${cleanEmail}`);
+      res.status(401).json({ message: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' });
       return;
     }
+
+    console.log(`[Auth] ✅ เข้าสู่ระบบสำเร็จ: ${user.fullName} (${user.email}) - Role: ${user.role}`);
 
     const token = generateToken({
       userId: user.id,
