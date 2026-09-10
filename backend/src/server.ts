@@ -24,6 +24,9 @@ app.use(express.json());
 
 // Request logging middleware
 app.use((req, res, next) => {
+  if (req.url.includes('//')) {
+    req.url = req.url.replace(/\/{2,}/g, '/');
+  }
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
