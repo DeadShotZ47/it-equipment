@@ -10,4 +10,6 @@ export const dashboardRoutes = Router();
 
 dashboardRoutes.get('/stats', authenticate, requireAdmin, getDashboardStats);
 dashboardRoutes.get('/monthly-trends', authenticate, requireAdmin, getMonthlyTrends);
+dashboardRoutes.get('/trends', authenticate, requireAdmin, getMonthlyTrends);
 dashboardRoutes.get('/by-category', authenticate, requireAdmin, getEquipmentByCategory);
+dashboardRoutes.get('/categories', authenticate, requireAdmin, getEquipmentByCategory);

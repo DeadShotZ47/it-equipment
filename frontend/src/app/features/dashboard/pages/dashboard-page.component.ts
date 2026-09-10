@@ -113,10 +113,20 @@ export interface DonutChartOptions {
               <h2 class="text-base font-semibold text-slate-900">แนวโน้มการเบิก-จ่ายอุปกรณ์รายเดือน</h2>
               <p class="text-xs text-slate-400">คำนวณและจัดกลุ่มตามเดือนบน PostgreSQL โดยตรง (DB Aggregation)</p>
             </div>
-            <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">ปี 2026</span>
+            <span class="text-xs font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md">ปี {{ currentYear }}</span>
           </div>
 
-          <div *ngIf="barChartOptions" class="w-full">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingTrends()" class="h-80 flex flex-col items-center justify-center text-slate-400">
+            <svg class="animate-spin w-8 h-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <p class="text-xs">กำลังคำนวณและโหลดแนวโน้มรายเดือน...</p>
+          </div>
+
+          <!-- Chart Display -->
+          <div *ngIf="!isLoadingTrends() && barChartOptions" class="w-full">
             <apx-chart
               [series]="barChartOptions.series"
               [chart]="barChartOptions.chart"
@@ -129,6 +139,10 @@ export interface DonutChartOptions {
               [legend]="barChartOptions.legend">
             </apx-chart>
           </div>
+
+          <div *ngIf="!isLoadingTrends() && !barChartOptions" class="h-80 flex flex-col items-center justify-center text-slate-400">
+            <p class="text-xs text-rose-500 font-medium">ไม่สามารถโหลดข้อมูลแนวโน้มรายเดือนได้</p>
+          </div>
         </div>
 
         <!-- Equipment by Category Donut Chart -->
@@ -138,7 +152,17 @@ export interface DonutChartOptions {
             <p class="text-xs text-slate-400">กระจายตามหมวดหมู่ที่ Admin จัดการ</p>
           </div>
 
-          <div *ngIf="donutChartOptions" class="flex-1 flex items-center justify-center">
+          <!-- Loading State -->
+          <div *ngIf="isLoadingCategories()" class="flex-1 min-h-[280px] flex flex-col items-center justify-center text-slate-400">
+            <svg class="animate-spin w-8 h-8 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <p class="text-xs">กำลังโหลดสัดส่วนหมวดหมู่...</p>
+          </div>
+
+          <!-- Donut Display -->
+          <div *ngIf="!isLoadingCategories() && donutChartOptions" class="flex-1 flex items-center justify-center">
             <apx-chart
               [series]="donutChartOptions.series"
               [chart]="donutChartOptions.chart"
@@ -148,6 +172,15 @@ export interface DonutChartOptions {
               [responsive]="donutChartOptions.responsive">
             </apx-chart>
           </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!isLoadingCategories() && !donutChartOptions" class="flex-1 min-h-[280px] flex flex-col items-center justify-center text-slate-400">
+            <svg class="w-12 h-12 text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+            </svg>
+            <p class="text-xs text-slate-500 font-medium">ยังไม่มีข้อมูลอุปกรณ์ในหมวดหมู่</p>
+          </div>
         </div>
       </div>
     </div>
@@ -156,7 +189,11 @@ export interface DonutChartOptions {
 export class DashboardPageComponent implements OnInit {
   private dashboardService = inject(DashboardService);
 
+  currentYear = new Date().getFullYear();
   stats = signal<DashboardStats | null>(null);
+  isLoadingTrends = signal<boolean>(true);
+  isLoadingCategories = signal<boolean>(true);
+
   barChartOptions: BarChartOptions | null = null;
   donutChartOptions: DonutChartOptions | null = null;
 
@@ -170,18 +207,28 @@ export class DashboardPageComponent implements OnInit {
       error: (err) => console.error('Failed to load stats', err)
     });
 
-    this.dashboardService.getMonthlyTrends(2026).subscribe({
+    this.isLoadingTrends.set(true);
+    this.dashboardService.getMonthlyTrends(this.currentYear).subscribe({
       next: (trends: MonthlyTrend[]) => {
         this.setupBarChart(trends);
+        this.isLoadingTrends.set(false);
       },
-      error: (err) => console.error('Failed to load trends', err)
+      error: (err) => {
+        console.error('Failed to load trends', err);
+        this.isLoadingTrends.set(false);
+      }
     });
 
+    this.isLoadingCategories.set(true);
     this.dashboardService.getEquipmentByCategory().subscribe({
       next: (catStats: CategoryStat[]) => {
         this.setupDonutChart(catStats);
+        this.isLoadingCategories.set(false);
       },
-      error: (err) => console.error('Failed to load category stats', err)
+      error: (err) => {
+        console.error('Failed to load category stats', err);
+        this.isLoadingCategories.set(false);
+      }
     });
   }
 
@@ -222,8 +269,22 @@ export class DashboardPageComponent implements OnInit {
   }
 
   private setupDonutChart(catStats: CategoryStat[]): void {
-    const labels = catStats.map((c) => c.category_name);
-    const series = catStats.map((c) => c.count);
+    if (!catStats || catStats.length === 0) {
+      this.donutChartOptions = null;
+      return;
+    }
+
+    // Filter categories that have items, or show all if all 0
+    const activeCats = catStats.filter((c) => c.count > 0);
+    const targetCats = activeCats.length > 0 ? activeCats : catStats;
+
+    const labels = targetCats.map((c) => c.category_name);
+    const series = targetCats.map((c) => c.count);
+
+    if (series.every((val) => val === 0)) {
+      this.donutChartOptions = null;
+      return;
+    }
 
     this.donutChartOptions = {
       series,

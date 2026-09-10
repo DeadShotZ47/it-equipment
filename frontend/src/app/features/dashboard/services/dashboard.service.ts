@@ -19,10 +19,10 @@ export class DashboardService {
   getMonthlyTrends(year?: number): Observable<MonthlyTrend[]> {
     let params = new HttpParams();
     if (year) params = params.set('year', String(year));
-    return this.http.get<MonthlyTrend[]>(`${this.apiUrl}/trends`, { params });
+    return this.http.get<MonthlyTrend[]>(`${this.apiUrl}/monthly-trends`, { params });
   }
 
   getEquipmentByCategory(): Observable<CategoryStat[]> {
-    return this.http.get<CategoryStat[]>(`${this.apiUrl}/categories`);
+    return this.http.get<CategoryStat[]>(`${this.apiUrl}/by-category`);
   }
 }
