@@ -30,6 +30,8 @@ export class StatusBadgeComponent {
       // Request Status
       case 'PENDING': return 'รออนุมัติ';
       case 'APPROVED': return 'อนุมัติแล้ว';
+      case 'IN_USE': return 'กำลังถูกยืม';
+      case 'RETURN_PENDING': return 'รอตรวจรับคืน';
       case 'REJECTED': return 'ปฏิเสธ';
       case 'RETURNED': return 'ส่งคืนแล้ว';
       case 'CANCELLED': return 'ยกเลิกแล้ว';
@@ -47,7 +49,10 @@ export class StatusBadgeComponent {
       case 'AVAILABLE':
       case 'APPROVED':
         return 'bg-emerald-50 text-emerald-700 border-emerald-200/80';
+      case 'RETURN_PENDING':
+        return 'bg-amber-100 text-amber-900 border-amber-300 font-semibold';
       case 'CHECKED_OUT':
+      case 'IN_USE':
       case 'RETURNED':
         return 'bg-blue-50 text-blue-700 border-blue-200/80';
       case 'PENDING':
@@ -72,7 +77,10 @@ export class StatusBadgeComponent {
       case 'AVAILABLE':
       case 'APPROVED':
         return 'bg-emerald-500';
+      case 'RETURN_PENDING':
+        return 'bg-amber-600 animate-pulse';
       case 'CHECKED_OUT':
+      case 'IN_USE':
       case 'RETURNED':
         return 'bg-blue-500';
       case 'PENDING':

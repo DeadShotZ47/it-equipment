@@ -16,7 +16,15 @@ export const getRequests = async (req: AuthenticatedRequest, res: Response): Pro
       where.requesterId = req.user?.userId;
     }
 
-    if (status) {
+    if (status === 'RETURN_PENDING') {
+      where.status = 'APPROVED';
+      where.type = 'CHECKOUT';
+      where.returnRequestedAt = { not: null };
+    } else if (status === 'IN_USE') {
+      where.status = 'APPROVED';
+      where.type = 'CHECKOUT';
+      where.returnRequestedAt = null;
+    } else if (status) {
       where.status = status as any;
     }
 
@@ -311,6 +319,54 @@ export const rejectRequest = async (req: AuthenticatedRequest, res: Response): P
       include: {
         requester: { select: { fullName: true, email: true } },
         items: { include: { equipment: true } }
+      }
+    });
+
+    res.json(updated);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const requestReturn = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { returnNote } = req.body || {};
+
+    const request = await prisma.request.findUnique({
+      where: { id },
+      include: { items: { include: { equipment: true } } }
+    });
+
+    if (!request) {
+      res.status(404).json({ message: 'Request not found' });
+      return;
+    }
+
+    if (req.user?.role !== 'ADMIN' && request.requesterId !== req.user?.userId) {
+      res.status(403).json({ message: 'คุณไม่มีสิทธิ์แจ้งส่งคืนสำหรับคำขอนี้' });
+      return;
+    }
+
+    if (request.status !== 'APPROVED') {
+      res.status(400).json({ message: 'สามารถแจ้งส่งคืนได้เฉพาะอุปกรณ์ที่อนุมัติแล้วเท่านั้น' });
+      return;
+    }
+
+    if (request.type !== 'CHECKOUT') {
+      res.status(400).json({ message: 'ของสิ้นเปลืองไม่สามารถส่งคืนได้' });
+      return;
+    }
+
+    const updated = await prisma.request.update({
+      where: { id },
+      data: {
+        returnRequestedAt: new Date(),
+        ...(returnNote ? { returnNote } : {})
+      },
+      include: {
+        requester: { select: { id: true, employeeId: true, fullName: true, email: true, department: true } },
+        items: { include: { equipment: { include: { category: true } } } }
       }
     });
 

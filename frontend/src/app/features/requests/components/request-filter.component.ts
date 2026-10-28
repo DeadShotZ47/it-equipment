@@ -24,7 +24,7 @@ export interface RequestFilterParams {
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </span>
-          <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput($event)"
+          <input type="text" [(ngModel)]="search" (ngModelChange)="onSearchInput($event)" (keyup.enter)="emitChange()"
                  placeholder="ค้นหาตามเลขที่คำขอ (REQ-...), ชื่อผู้ยื่น, อุปกรณ์, หรือซีเรียล..."
                  class="w-full pl-9 pr-8 py-2 text-xs rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition" />
           <button *ngIf="search" (click)="clearSearch()" type="button"
@@ -59,13 +59,19 @@ export interface RequestFilterParams {
                 class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition whitespace-nowrap">
           รออนุมัติ
         </button>
-        <button type="button" (click)="selectStatus('APPROVED')"
-                [class.bg-white]="selectedStatus === 'APPROVED'" [class.shadow-2xs]="selectedStatus === 'APPROVED'" [class.text-emerald-700]="selectedStatus === 'APPROVED'" [class.font-semibold]="selectedStatus === 'APPROVED'"
+        <button type="button" (click)="selectStatus('IN_USE')"
+                [class.bg-white]="selectedStatus === 'IN_USE'" [class.shadow-2xs]="selectedStatus === 'IN_USE'" [class.text-blue-700]="selectedStatus === 'IN_USE'" [class.font-semibold]="selectedStatus === 'IN_USE'"
                 class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition whitespace-nowrap">
-          อนุมัติแล้ว
+          กำลังยืม
+        </button>
+        <button type="button" (click)="selectStatus('RETURN_PENDING')"
+                [class.bg-white]="selectedStatus === 'RETURN_PENDING'" [class.shadow-2xs]="selectedStatus === 'RETURN_PENDING'" [class.text-amber-800]="selectedStatus === 'RETURN_PENDING'" [class.font-semibold]="selectedStatus === 'RETURN_PENDING'"
+                class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition whitespace-nowrap flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+          <span>รอตรวจรับคืน</span>
         </button>
         <button type="button" (click)="selectStatus('RETURNED')"
-                [class.bg-white]="selectedStatus === 'RETURNED'" [class.shadow-2xs]="selectedStatus === 'RETURNED'" [class.text-blue-700]="selectedStatus === 'RETURNED'" [class.font-semibold]="selectedStatus === 'RETURNED'"
+                [class.bg-white]="selectedStatus === 'RETURNED'" [class.shadow-2xs]="selectedStatus === 'RETURNED'" [class.text-emerald-700]="selectedStatus === 'RETURNED'" [class.font-semibold]="selectedStatus === 'RETURNED'"
                 class="px-3 py-1.5 rounded-md text-slate-600 hover:text-slate-900 transition whitespace-nowrap">
           ส่งคืนแล้ว
         </button>

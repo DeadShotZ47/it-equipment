@@ -46,8 +46,12 @@ export class RequestService {
     return this.http.patch<RequestRecord>(`${this.apiUrl}/${id}/reject`, { adminNote });
   }
 
-  returnRequest(id: string): Observable<RequestRecord> {
-    return this.http.patch<RequestRecord>(`${this.apiUrl}/${id}/return`, {});
+  requestReturn(id: string, returnNote?: string): Observable<RequestRecord> {
+    return this.http.patch<RequestRecord>(`${this.apiUrl}/${id}/request-return`, { returnNote });
+  }
+
+  returnRequest(id: string, adminNote?: string): Observable<RequestRecord> {
+    return this.http.patch<RequestRecord>(`${this.apiUrl}/${id}/return`, { adminNote });
   }
 
   confirmQrScan(qrCode: string, requestId?: string): Observable<any> {

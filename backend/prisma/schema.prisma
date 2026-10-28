@@ -94,10 +94,12 @@ model Request {
   type          RequestType
   status        RequestStatus @default(PENDING)
   reason        String?
-  adminNote     String?       @map("admin_note")
-  approvedAt    DateTime?     @map("approved_at")
-  rejectedAt    DateTime?     @map("rejected_at")
-  createdAt     DateTime      @default(now()) @map("created_at")
+  adminNote         String?       @map("admin_note")
+  returnNote        String?       @map("return_note")
+  approvedAt        DateTime?     @map("approved_at")
+  rejectedAt        DateTime?     @map("rejected_at")
+  returnRequestedAt DateTime?     @map("return_requested_at")
+  createdAt         DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
   requester     User          @relation(fields: [requesterId], references: [id])

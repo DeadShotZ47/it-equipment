@@ -5,6 +5,7 @@ import {
   createRequest,
   approveRequest,
   rejectRequest,
+  requestReturn,
   returnRequest,
   confirmQrScan
 } from '../controllers/request.controller.js';
@@ -17,5 +18,6 @@ requestRoutes.get('/:id', authenticate, getRequestById);
 requestRoutes.post('/', authenticate, createRequest);
 requestRoutes.patch('/:id/approve', authenticate, requireAdmin, approveRequest);
 requestRoutes.patch('/:id/reject', authenticate, requireAdmin, rejectRequest);
+requestRoutes.patch('/:id/request-return', authenticate, requestReturn);
 requestRoutes.patch('/:id/return', authenticate, requireAdmin, returnRequest);
 requestRoutes.post('/qr-confirm', authenticate, confirmQrScan);

@@ -24,7 +24,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
       <div>
         <h1 class="text-2xl font-bold text-slate-900 tracking-tight">คำขอเบิก & อนุมัติ (Requests & Approvals)</h1>
         <p class="text-xs text-slate-500 mt-1">
-          {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติและรับคืนอุปกรณ์สำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และตรวจสอบรายการที่ต้องส่งคืน' }}
+          {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติและตรวจสอบรับคืนอุปกรณ์สำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และแจ้งส่งคืนอุปกรณ์เมื่อใช้งานเสร็จ' }}
         </p>
       </div>
 
@@ -43,6 +43,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
           [request]="req"
           (onApprove)="openApproveModal($event)"
           (onReject)="openRejectModal($event)"
+          (onRequestReturn)="requestReturnItem($event)"
           (onReturn)="returnItem($event)">
         </app-request-card>
 
@@ -159,13 +160,25 @@ export class RequestPageComponent implements OnInit {
     }
   }
 
+  requestReturnItem(req: RequestRecord): void {
+    if (!confirm(`คุณต้องการแจ้งส่งคืนอุปกรณ์ตามคำขอ ${req.requestNumber} ใช่หรือไม่?\nเมื่อกดยืนยัน โปรดนำตัวเครื่องและอุปกรณ์เสริมมาส่งมอบให้เจ้าหน้าที่ IT ตรวจสอบ`)) return;
+
+    this.requestService.requestReturn(req.id).subscribe({
+      next: () => {
+        alert('ส่งคำขอแจ้งคืนอุปกรณ์เรียบร้อยแล้ว! กรุณานำอุปกรณ์มาส่งมอบให้เจ้าหน้าที่ IT ตรวจสอบสภาพเพื่อยืนยันการรับคืน');
+        this.loadRequests();
+      },
+      error: (err) => alert(err.error?.message || 'เกิดข้อผิดพลาดในการแจ้งส่งคืน')
+    });
+  }
+
   returnItem(req: RequestRecord): void {
     if (!this.auth.isAdmin()) {
       alert('เฉพาะเจ้าหน้าที่ IT (Admin) เท่านั้นที่สามารถกดยืนยันการรับคืนอุปกรณ์ได้');
       return;
     }
 
-    if (!confirm(`ยืนยันการรับคืนอุปกรณ์ตามคำขอ ${req.requestNumber} จากผู้ยืมเรียบร้อยแล้วใช่หรือไม่?\n(โปรดตรวจสอบสภาพอุปกรณ์จริงก่อนยืนยันรับคืนเข้าคลัง)`)) return;
+    if (!confirm(`ยืนยันการตรวจสอบสภาพและรับคืนอุปกรณ์ตามคำขอ ${req.requestNumber} เข้าคลังเรียบร้อยแล้วใช่หรือไม่?\n(สถานะอุปกรณ์จะกลับเป็นพร้อมใช้งานทันที)`)) return;
 
     this.requestService.returnRequest(req.id).subscribe({
       next: () => {

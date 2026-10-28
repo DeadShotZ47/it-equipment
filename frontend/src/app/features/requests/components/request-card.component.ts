@@ -31,10 +31,11 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
         </div>
 
         <!-- Status Badge & Actions -->
-        <div class="flex items-center gap-2.5 self-start md:self-auto">
-          <app-status-badge [status]="request.status"></app-status-badge>
+        <div class="flex items-center gap-2.5 self-start md:self-auto flex-wrap">
+          <!-- Main status badge -->
+          <app-status-badge [status]="displayStatus"></app-status-badge>
 
-          <!-- Admin 1-Step Actions -->
+          <!-- Admin 1-Step Actions for Pending Requests -->
           <ng-container *ngIf="auth.isAdmin() && request.status === 'PENDING'">
             <button (click)="onApprove.emit(request)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
               ✓ อนุมัติ
@@ -44,20 +45,51 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             </button>
           </ng-container>
 
-          <!-- Return Action (Admin confirms only) -->
+          <!-- Return Actions for Approved Checkouts -->
           <ng-container *ngIf="request.status === 'APPROVED' && request.type === 'CHECKOUT'">
-            <button *ngIf="auth.isAdmin()"
-                    (click)="onReturn.emit(request)"
-                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
-                    title="เจ้าหน้าที่ IT ยืนยันการรับอุปกรณ์คืนเข้าคลัง">
-              <span>↩</span>
-              <span>ยืนยันรับคืนอุปกรณ์</span>
-            </button>
-            <span *ngIf="!auth.isAdmin()"
-                  class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-              <span>อยู่ระหว่างการยืม (นำส่งคืนที่แผนก IT)</span>
-            </span>
+            <!-- Case 1: Borrower has NOT requested return yet -->
+            <ng-container *ngIf="!request.returnRequestedAt">
+              <!-- Borrower (non-admin): Button to Request/Initiate Return -->
+              <button *ngIf="!auth.isAdmin()"
+                      (click)="onRequestReturn.emit(request)"
+                      class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                      title="กดเมื่อพร้อมนำอุปกรณ์มาส่งคืนเจ้าหน้าที่ IT">
+                <span>↩</span>
+                <span>แจ้งส่งคืนอุปกรณ์</span>
+              </button>
+
+              <!-- Admin view when borrower hasn't requested return yet -->
+              <div *ngIf="auth.isAdmin()" class="flex items-center gap-2">
+                <span class="px-2.5 py-1 bg-slate-100 text-slate-600 border border-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
+                  <span>กำลังใช้งาน (ยังไม่แจ้งคืน)</span>
+                </span>
+                <button (click)="onReturn.emit(request)"
+                        class="px-2 py-1 text-slate-500 hover:text-blue-600 text-[11px] font-medium underline transition"
+                        title="คลิกกรณีผู้ยืมนำอุปกรณ์มาส่งคืนที่โต๊ะโดยตรง">
+                  รับคืนทันที
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- Case 2: Borrower HAS requested return (Waiting for Admin verification) -->
+            <ng-container *ngIf="request.returnRequestedAt">
+              <!-- Borrower (non-admin): Waiting notice -->
+              <span *ngIf="!auth.isAdmin()"
+                    class="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-300 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-2xs">
+                <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span>แจ้งส่งคืนแล้ว (กรุณานำของส่งมอบให้ IT ตรวจสอบ)</span>
+              </span>
+
+              <!-- Admin: Prominent verify and confirm return button -->
+              <button *ngIf="auth.isAdmin()"
+                      (click)="onReturn.emit(request)"
+                      class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                      title="ผู้ยืมแจ้งส่งคืนแล้ว · โปรดตรวจสอบสภาพอุปกรณ์จริงก่อนยืนยัน">
+                <span>✓</span>
+                <span>ตรวจสอบสภาพและยืนยันรับคืน</span>
+              </button>
+            </ng-container>
           </ng-container>
         </div>
       </div>
@@ -86,6 +118,11 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <span class="font-semibold text-slate-800">บันทึกจากเจ้าหน้าที่ IT:</span>
             <span class="text-slate-600 ml-1">{{ request.adminNote }}</span>
           </div>
+          <div *ngIf="request.returnRequestedAt && request.status !== 'RETURNED'" class="mt-2 pt-2 border-t border-amber-200 text-amber-900">
+            <span class="font-semibold">สถานะการส่งคืน:</span>
+            <span class="ml-1">ผู้ยืมแจ้งส่งคืนเมื่อ {{ request.returnRequestedAt | date:'medium' }}</span>
+            <p *ngIf="request.returnNote" class="text-slate-600 mt-0.5">บันทึกจากผู้ยืม: {{ request.returnNote }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -98,7 +135,15 @@ export class RequestCardComponent {
   @Input({ required: true }) request!: RequestRecord;
   @Output() onApprove = new EventEmitter<RequestRecord>();
   @Output() onReject = new EventEmitter<RequestRecord>();
+  @Output() onRequestReturn = new EventEmitter<RequestRecord>();
   @Output() onReturn = new EventEmitter<RequestRecord>();
+
+  get displayStatus(): string {
+    if (this.request.status === 'APPROVED' && this.request.type === 'CHECKOUT' && this.request.returnRequestedAt) {
+      return 'RETURN_PENDING';
+    }
+    return this.request.status;
+  }
 
   get typeBadgeClass(): string {
     return this.request.type === 'CHECKOUT'

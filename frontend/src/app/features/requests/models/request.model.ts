@@ -20,8 +20,10 @@ export interface RequestRecord {
   status: RequestStatus;
   reason?: string;
   adminNote?: string;
+  returnNote?: string;
   approvedAt?: string;
   rejectedAt?: string;
+  returnRequestedAt?: string;
   createdAt: string;
   updatedAt: string;
   requester: User;
