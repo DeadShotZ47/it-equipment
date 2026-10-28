@@ -17,5 +17,5 @@ requestRoutes.get('/:id', authenticate, getRequestById);
 requestRoutes.post('/', authenticate, createRequest);
 requestRoutes.patch('/:id/approve', authenticate, requireAdmin, approveRequest);
 requestRoutes.patch('/:id/reject', authenticate, requireAdmin, rejectRequest);
-requestRoutes.patch('/:id/return', authenticate, returnRequest);
+requestRoutes.patch('/:id/return', authenticate, requireAdmin, returnRequest);
 requestRoutes.post('/qr-confirm', authenticate, confirmQrScan);

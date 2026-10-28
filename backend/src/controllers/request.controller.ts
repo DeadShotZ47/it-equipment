@@ -290,7 +290,13 @@ export const rejectRequest = async (req: AuthenticatedRequest, res: Response): P
 
 export const returnRequest = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
+    if (req.user?.role !== 'ADMIN') {
+      res.status(403).json({ message: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถกดยืนยันการรับคืนอุปกรณ์ได้' });
+      return;
+    }
+
     const { id } = req.params;
+    const { adminNote } = req.body || {};
 
     const request = await prisma.request.findUnique({
       where: { id },
@@ -328,7 +334,10 @@ export const returnRequest = async (req: AuthenticatedRequest, res: Response): P
 
       return tx.request.update({
         where: { id },
-        data: { status: 'RETURNED' },
+        data: {
+          status: 'RETURNED',
+          ...(adminNote ? { adminNote } : {})
+        },
         include: {
           requester: { select: { fullName: true, email: true } },
           items: { include: { equipment: true } }
@@ -371,11 +380,12 @@ export const confirmQrScan = async (req: AuthenticatedRequest, res: Response): P
         include: { items: { include: { equipment: true } } }
       });
     } else {
-      // Find latest approved request for this equipment for this user
+      // Find latest approved request for this equipment
+      // If admin, find request for any user; if normal user, only find their own request
       targetRequest = await prisma.request.findFirst({
         where: {
           status: 'APPROVED',
-          requesterId: req.user?.userId,
+          ...(req.user?.role !== 'ADMIN' ? { requesterId: req.user?.userId } : {}),
           items: { some: { equipmentId: equipment.id } }
         },
         include: { items: { include: { equipment: true } } },
@@ -419,6 +429,15 @@ export const confirmQrScan = async (req: AuthenticatedRequest, res: Response): P
 
     // Second scan for checkout item: return
     if (targetRequest.type === 'CHECKOUT' && targetRequest.status === 'APPROVED') {
+      if (req.user?.role !== 'ADMIN') {
+        res.status(403).json({
+          success: false,
+          action: 'FORBIDDEN',
+          message: 'การส่งคืนอุปกรณ์ต้องได้รับการสแกนยืนยันโดยเจ้าหน้าที่ IT (Admin) เท่านั้น เพื่อตรวจสอบสภาพอุปกรณ์จริง'
+        });
+        return;
+      }
+
       const updated = await prisma.$transaction(async (tx) => {
         await tx.equipment.update({
           where: { id: equipment.id },

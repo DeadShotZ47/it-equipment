@@ -44,12 +44,21 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             </button>
           </ng-container>
 
-          <!-- Return Action -->
-          <button *ngIf="request.status === 'APPROVED' && request.type === 'CHECKOUT'"
-                  (click)="onReturn.emit(request)"
-                  class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition">
-            ↩ บันทึกส่งคืนอุปกรณ์
-          </button>
+          <!-- Return Action (Admin confirms only) -->
+          <ng-container *ngIf="request.status === 'APPROVED' && request.type === 'CHECKOUT'">
+            <button *ngIf="auth.isAdmin()"
+                    (click)="onReturn.emit(request)"
+                    class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs transition flex items-center gap-1.5"
+                    title="เจ้าหน้าที่ IT ยืนยันการรับอุปกรณ์คืนเข้าคลัง">
+              <span>↩</span>
+              <span>ยืนยันรับคืนอุปกรณ์</span>
+            </button>
+            <span *ngIf="!auth.isAdmin()"
+                  class="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-lg text-xs font-medium flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+              <span>อยู่ระหว่างการยืม (นำส่งคืนที่แผนก IT)</span>
+            </span>
+          </ng-container>
         </div>
       </div>
 

@@ -25,7 +25,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
         <div>
           <h1 class="text-2xl font-bold text-slate-900 tracking-tight">คำขอเบิก & อนุมัติ (Requests & Approvals)</h1>
           <p class="text-xs text-slate-500 mt-1">
-            {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติ 1 ขั้นตอนสำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และการส่งคืนอุปกรณ์' }}
+            {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติและรับคืนอุปกรณ์สำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และตรวจสอบรายการที่ต้องส่งคืน' }}
           </p>
         </div>
 
@@ -144,14 +144,19 @@ export class RequestPageComponent implements OnInit {
   }
 
   returnItem(req: RequestRecord): void {
-    if (!confirm(`ยืนยันการรับคืนอุปกรณ์ตามคำขอ ${req.requestNumber}? สถานะอุปกรณ์จะกลับเป็นพร้อมใช้งาน`)) return;
+    if (!this.auth.isAdmin()) {
+      alert('เฉพาะเจ้าหน้าที่ IT (Admin) เท่านั้นที่สามารถกดยืนยันการรับคืนอุปกรณ์ได้');
+      return;
+    }
+
+    if (!confirm(`ยืนยันการรับคืนอุปกรณ์ตามคำขอ ${req.requestNumber} จากผู้ยืมเรียบร้อยแล้วใช่หรือไม่?\n(โปรดตรวจสอบสภาพอุปกรณ์จริงก่อนยืนยันรับคืนเข้าคลัง)`)) return;
 
     this.requestService.returnRequest(req.id).subscribe({
       next: () => {
-        alert('บันทึกส่งคืนอุปกรณ์เรียบร้อยแล้ว!');
+        alert('บันทึกรับคืนอุปกรณ์เข้าคลังเรียบร้อยแล้ว! สถานะอุปกรณ์กลับเป็นพร้อมใช้งาน');
         this.loadRequests();
       },
-      error: (err) => alert(err.error?.message || 'เกิดข้อผิดพลาดในการส่งคืน')
+      error: (err) => alert(err.error?.message || 'เกิดข้อผิดพลาดในการรับคืนอุปกรณ์')
     });
   }
 }
