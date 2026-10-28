@@ -12,9 +12,16 @@ export class RequestService {
 
   constructor(private http: HttpClient) {}
 
-  getRequests(filters?: { status?: string; type?: string; page?: number; limit?: number }): Observable<RequestListResponse> {
+  getRequests(filters?: {
+    search?: string;
+    status?: string;
+    type?: string;
+    page?: number;
+    limit?: number;
+  }): Observable<RequestListResponse> {
     let params = new HttpParams();
     if (filters) {
+      if (filters.search) params = params.set('search', filters.search);
       if (filters.status) params = params.set('status', filters.status);
       if (filters.type) params = params.set('type', filters.type);
       if (filters.page) params = params.set('page', String(filters.page));

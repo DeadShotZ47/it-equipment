@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RequestService } from '../services/request.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { RequestRecord } from '../models/request.model';
-import { RequestFilterComponent } from '../components/request-filter.component';
+import { RequestFilterComponent, RequestFilterParams } from '../components/request-filter.component';
 import { RequestCardComponent } from '../components/request-card.component';
 import { RequestActionModalComponent } from '../components/request-action-modal.component';
 import { EmptyStateComponent } from '../../../shared/components/empty-state/empty-state.component';
@@ -21,20 +21,20 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
   template: `
     <div class="space-y-5">
       <!-- Title Bar -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">คำขอเบิก & อนุมัติ (Requests & Approvals)</h1>
-          <p class="text-xs text-slate-500 mt-1">
-            {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติและรับคืนอุปกรณ์สำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และตรวจสอบรายการที่ต้องส่งคืน' }}
-          </p>
-        </div>
-
-        <!-- Filter Status Tabs -->
-        <app-request-filter
-          [selectedStatus]="selectedStatus"
-          (statusChange)="filterStatus($event)">
-        </app-request-filter>
+      <div>
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">คำขอเบิก & อนุมัติ (Requests & Approvals)</h1>
+        <p class="text-xs text-slate-500 mt-1">
+          {{ auth.isAdmin() ? 'ขั้นตอนอนุมัติและรับคืนอุปกรณ์สำหรับเจ้าหน้าที่ IT · ตัดยอดสต็อกของสิ้นเปลืองอัตโนมัติ' : 'ติดตามสถานะคำขอเบิก-ยืมของฉัน และตรวจสอบรายการที่ต้องส่งคืน' }}
+        </p>
       </div>
+
+      <!-- Filter Component (Search, Type, Status) -->
+      <app-request-filter
+        [search]="searchQuery"
+        [selectedStatus]="selectedStatus"
+        [selectedType]="selectedType"
+        (filterChange)="onFilterChange($event)">
+      </app-request-filter>
 
       <!-- Requests Cards/List -->
       <div class="space-y-3">
@@ -50,7 +50,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
           *ngIf="requests().length === 0"
           icon="📋"
           title="ไม่พบรายการคำขอ"
-          description="ไม่พบรายการคำขอเบิก-ยืมในหมวดหมู่นี้">
+          [description]="searchQuery ? 'ไม่พบรายการที่ตรงกับคำค้นหา \"' + searchQuery + '\"' : 'ไม่พบรายการคำขอเบิก-ยืมในหมวดหมู่นี้'">
         </app-empty-state>
       </div>
 
@@ -71,7 +71,9 @@ export class RequestPageComponent implements OnInit {
   auth = inject(AuthService);
 
   requests = signal<RequestRecord[]>([]);
+  searchQuery = '';
   selectedStatus = '';
+  selectedType = '';
 
   // Modal State
   showActionModal = signal(false);
@@ -83,19 +85,23 @@ export class RequestPageComponent implements OnInit {
     this.loadRequests();
   }
 
+  onFilterChange(params: RequestFilterParams): void {
+    this.searchQuery = params.search;
+    this.selectedStatus = params.status;
+    this.selectedType = params.type;
+    this.loadRequests();
+  }
+
   loadRequests(): void {
     const filters: any = {};
+    if (this.searchQuery) filters.search = this.searchQuery;
     if (this.selectedStatus) filters.status = this.selectedStatus;
+    if (this.selectedType) filters.type = this.selectedType;
 
     this.requestService.getRequests(filters).subscribe({
       next: (res) => this.requests.set(res.items),
       error: (err) => console.error(err)
     });
-  }
-
-  filterStatus(status: string): void {
-    this.selectedStatus = status;
-    this.loadRequests();
   }
 
   openApproveModal(req: RequestRecord): void {

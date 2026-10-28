@@ -4,7 +4,7 @@ import { AuthenticatedRequest } from '../middleware/auth.middleware.js';
 
 export const getRequests = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
-    const { status, type, page = '1', limit = '50' } = req.query;
+    const { status, type, search, page = '1', limit = '50' } = req.query;
     const pageNum = parseInt(page as string, 10) || 1;
     const limitNum = parseInt(limit as string, 10) || 50;
     const skip = (pageNum - 1) * limitNum;
@@ -22,6 +22,38 @@ export const getRequests = async (req: AuthenticatedRequest, res: Response): Pro
 
     if (type) {
       where.type = type as any;
+    }
+
+    if (search && typeof search === 'string' && search.trim() !== '') {
+      const q = search.trim();
+      where.OR = [
+        { requestNumber: { contains: q, mode: 'insensitive' } },
+        { reason: { contains: q, mode: 'insensitive' } },
+        { adminNote: { contains: q, mode: 'insensitive' } },
+        {
+          requester: {
+            OR: [
+              { fullName: { contains: q, mode: 'insensitive' } },
+              { email: { contains: q, mode: 'insensitive' } },
+              { employeeId: { contains: q, mode: 'insensitive' } },
+              { department: { contains: q, mode: 'insensitive' } }
+            ]
+          }
+        },
+        {
+          items: {
+            some: {
+              equipment: {
+                OR: [
+                  { name: { contains: q, mode: 'insensitive' } },
+                  { serialNumber: { contains: q, mode: 'insensitive' } },
+                  { qrCode: { contains: q, mode: 'insensitive' } }
+                ]
+              }
+            }
+          }
+        }
+      ];
     }
 
     const [total, items] = await Promise.all([
