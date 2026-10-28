@@ -50,7 +50,7 @@ import { EmptyStateComponent } from '../../../shared/components/empty-state/empt
           *ngIf="requests().length === 0"
           icon="📋"
           title="ไม่พบรายการคำขอ"
-          [description]="searchQuery ? 'ไม่พบรายการที่ตรงกับคำค้นหา \"' + searchQuery + '\"' : 'ไม่พบรายการคำขอเบิก-ยืมในหมวดหมู่นี้'">
+          [description]="emptyDescription">
         </app-empty-state>
       </div>
 
@@ -80,6 +80,16 @@ export class RequestPageComponent implements OnInit {
   actionType: 'approve' | 'reject' = 'approve';
   targetRequest: RequestRecord | null = null;
   isActionSubmitting = signal(false);
+
+  get emptyDescription(): string {
+    if (this.searchQuery) {
+      return `ไม่พบรายการที่ตรงกับคำค้นหา: "${this.searchQuery}"`;
+    }
+    if (this.selectedStatus || this.selectedType) {
+      return 'ไม่พบรายการคำขอที่ตรงกับเงื่อนไขตัวกรองที่เลือก';
+    }
+    return 'ไม่พบรายการคำขอเบิก-ยืมในขณะนี้';
+  }
 
   ngOnInit(): void {
     this.loadRequests();
