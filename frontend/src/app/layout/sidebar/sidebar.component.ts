@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -8,21 +8,38 @@ import { AuthService } from '../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, RouterModule],
   template: `
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col h-screen border-r border-slate-800 select-none">
+    <!-- Mobile Backdrop Overlay -->
+    <div *ngIf="isOpen"
+         (click)="close.emit()"
+         class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 lg:hidden transition-opacity">
+    </div>
+
+    <!-- Aside Sidebar Drawer -->
+    <aside [class.-translate-x-full]="!isOpen"
+           class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col h-screen border-r border-slate-800 select-none transform transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 shrink-0">
       <!-- Brand / Logo -->
-      <div class="h-16 flex items-center px-6 border-b border-slate-800 gap-3">
-        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+      <div class="h-16 flex items-center justify-between px-6 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <div>
+            <span class="text-white font-semibold text-base tracking-wide flex items-center gap-1.5">
+              ReqIT
+              <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hub</span>
+            </span>
+            <p class="text-[11px] text-slate-400 leading-tight">ระบบเบิกจ่ายอุปกรณ์ IT</p>
+          </div>
+        </div>
+
+        <!-- Mobile Close Button -->
+        <button (click)="close.emit()" type="button" class="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg transition" title="ปิดเมนู">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
-        </div>
-        <div>
-          <span class="text-white font-semibold text-base tracking-wide flex items-center gap-1.5">
-            ReqIT
-            <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400">Hub</span>
-          </span>
-          <p class="text-[11px] text-slate-400 leading-tight">ระบบเบิกจ่ายอุปกรณ์ IT</p>
-        </div>
+        </button>
       </div>
 
       <!-- Navigation Links -->
@@ -30,6 +47,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Admin Dashboard -->
         <a *ngIf="auth.isAdmin()"
            routerLink="/dashboard"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -40,6 +58,7 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- Equipment Inventory -->
         <a routerLink="/equipment"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,6 +70,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Categories (Admin Only) -->
         <a *ngIf="auth.isAdmin()"
            routerLink="/categories"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -62,6 +82,7 @@ import { AuthService } from '../../core/services/auth.service';
         <!-- Users Management (Admin Only) -->
         <a *ngIf="auth.isAdmin()"
            routerLink="/users"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -72,6 +93,7 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- Requests -->
         <a routerLink="/requests"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,6 +104,7 @@ import { AuthService } from '../../core/services/auth.service';
 
         <!-- History & Audits -->
         <a routerLink="/history"
+           (click)="close.emit()"
            routerLinkActive="bg-blue-600 text-white shadow-md shadow-blue-600/30"
            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800/80 hover:text-white transition group">
           <svg class="w-5 h-5 text-slate-400 group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,4 +142,7 @@ import { AuthService } from '../../core/services/auth.service';
 })
 export class SidebarComponent {
   auth = inject(AuthService);
+
+  @Input() isOpen = false;
+  @Output() close = new EventEmitter<void>();
 }
